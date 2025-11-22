@@ -29,7 +29,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return new UserResponseDto(user);
+    return UserResponseDto.fromEntity(user);
   }
 
   /**
@@ -42,7 +42,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException(`User with referral code ${referralCode} not found`);
     }
-    return new UserResponseDto(user);
+    return UserResponseDto.fromEntity(user);
   }
 
   /**
@@ -127,7 +127,7 @@ export class UserService {
     const updatedUser = await this.userRepository.save(user);
 
     this.logger.log(`User updated: ${id}`);
-    return new UserResponseDto(updatedUser);
+    return UserResponseDto.fromEntity(updatedUser);
   }
 
   /**

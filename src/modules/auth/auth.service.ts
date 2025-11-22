@@ -216,7 +216,7 @@ export class AuthService {
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
-    return ApiResponse.success('OTP Sent Successfully. ', new UserResponseDto(savedUser));
+    return ApiResponse.success('OTP Sent Successfully. ', UserResponseDto.fromEntity(savedUser));
   }
 
   /**
