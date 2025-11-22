@@ -57,7 +57,7 @@ export class AuthService {
    * @param loginInitiateDto - Login initiation data (email)
    * @returns User response DTO
    */
-  async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<UserResponseDto> {
+  async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     // Find user by email
     const user = await this.userService.findByEmail(loginInitiateDto.email);
     if (!user) {
@@ -80,7 +80,7 @@ export class AuthService {
 
     this.logger.log(`Login OTP sent to user: ${user.email}`);
 
-    return new UserResponseDto({});
+    return ApiResponse.success('OTP Sent Successfully.', new UserResponseDto({id:user.id,email:user.email,}));
   }
 
   /**
@@ -88,7 +88,7 @@ export class AuthService {
    * @param completeLoginDto - Complete login data (email, password)
    * @returns Authentication response with token and user
    */
-  async completeLogin(completeLoginDto: CompleteLoginDto): Promise<AuthResponseDto> {
+  async completeLogin(completeLoginDto: CompleteLoginDto): Promise<ApiResponse<AuthResponseDto>> {
     // Find user by email with password
     const user = await this.userService.findByEmailWithPassword(completeLoginDto.email);
     if (!user || !user.passwordHash) {
@@ -104,7 +104,7 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await bcrypt.compare(completeLoginDto.password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Password is Invalid.');
     }
 
     // Generate JWT token
@@ -115,10 +115,12 @@ export class AuthService {
 
     this.logger.log(`User logged in: ${user.email}`);
 
-    return new AuthResponseDto({
+    return ApiResponse.success('Login Successfull',
+      new AuthResponseDto({ 
       accessToken,
-      user: userResponse,
-    });
+      user: userResponse,})
+    );
+  
   }
 
   /**
@@ -126,7 +128,7 @@ export class AuthService {
    * @param forgotPasswordDto - Email address
    * @returns User response DTO with userId
    */
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<UserResponseDto> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<UserResponseDto>> {
     const user = await this.userService.findByEmail(forgotPasswordDto.email);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -139,7 +141,7 @@ export class AuthService {
     this.logger.log(`Forgot password OTP sent to user: ${user.email}`);
 
     // Return user with userId
-    return new UserResponseDto({ id: user.id });
+    return ApiResponse.success('Otp Sent Successfully.',new UserResponseDto({id:user.id, email: user.email }));
   }
 
   /**

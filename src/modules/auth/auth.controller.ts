@@ -30,7 +30,7 @@ export class AuthController {
   @Patch('login/initiate')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<UserResponseDto> {
+  async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     return this.authService.loginInitiate(loginInitiateDto);
   }
 
@@ -42,7 +42,7 @@ export class AuthController {
   @Post('login/complete')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async completeLogin(@Body() completeLoginDto: CompleteLoginDto): Promise<AuthResponseDto> {
+  async completeLogin(@Body() completeLoginDto: CompleteLoginDto): Promise<ApiResponse<AuthResponseDto>> {
     return this.authService.completeLogin(completeLoginDto);
   }
 
@@ -54,20 +54,20 @@ export class AuthController {
   @Patch('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<UserResponseDto> {
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<UserResponseDto>> {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  /**
+  /** 
    * Reset password using OTP verification
    * @param resetPasswordDto - User ID and new password
    */
   @Post('reset-password')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<ApiResponse<null>> {
     await this.authService.resetPassword(resetPasswordDto);
-    return { message: 'Password reset successfully' };
+    return ApiResponse.success("Password Reset Successfully");
   }
 
   /**
