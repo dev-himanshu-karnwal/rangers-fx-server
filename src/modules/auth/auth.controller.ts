@@ -62,7 +62,7 @@ export class AuthController {
    * Reset password using OTP verification
    * @param resetPasswordDto - User ID and new password
    */
-  @Post('reset-password')
+  @Patch('reset-password')
   @Public()
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
