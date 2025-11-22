@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '../../../config/config.service';
 import * as nodemailer from 'nodemailer';
 import { EmailTemplateService } from './email-template.service';
@@ -105,12 +105,17 @@ export class EmailService {
    * @param otp - Verification OTP code
    */
   async sendVerificationEmail(email: string, name: string, otp: string): Promise<void> {
-    const html = this.emailTemplateService.getVerificationTemplate(name, otp);
-    await this.sendEmail({
-      to: email,
-      subject: 'Verify Your Email - Rangers FX',
-      html,
-    });
+    try {
+      const html = this.emailTemplateService.getVerificationTemplate(name, otp);
+      await this.sendEmail({
+        to: email,
+        subject: 'Verify Your Email - Rangers FX',
+        html,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send verification email to ${email}:`, error);
+      throw new InternalServerErrorException('Failed to send verification email');
+    }
   }
 
   /**

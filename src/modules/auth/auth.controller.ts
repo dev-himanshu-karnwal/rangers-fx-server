@@ -87,7 +87,7 @@ export class AuthController {
    */
   @Post('signup/complete')
   @Public()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async completeSignup(@Body() completeSignupDto: CompleteSignupDto): Promise<AuthResponseDto> {
     return this.authService.completeSignup(completeSignupDto);
   }

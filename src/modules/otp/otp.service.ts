@@ -92,4 +92,12 @@ export class OtpService {
     }
     return result;
   }
+
+  /**
+   * Delete all OTPs for a user
+   * @param userId - User ID
+   */
+  async deleteAllOtpForUser(userId: number): Promise<void> {
+    await this.otpRepository.delete({ userId });
+  }
 }

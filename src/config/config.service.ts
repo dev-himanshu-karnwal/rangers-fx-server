@@ -6,7 +6,7 @@ export class ConfigService {
   constructor(private configService: NestConfigService) {}
 
   get port(): number {
-    return this.configService.get<number>('PORT', 5000);
+    return Number(this.configService.get<string>('PORT', '5000'));
   }
 
   get nodeEnv(): string {
@@ -18,7 +18,7 @@ export class ConfigService {
   }
 
   get dbPort(): number {
-    return this.configService.get<number>('DB_PORT', 5432);
+    return Number(this.configService.get<string>('DB_PORT', '5432'));
   }
 
   get dbUsername(): string {
@@ -46,11 +46,11 @@ export class ConfigService {
   }
 
   get smtpPort(): number {
-    return this.configService.get<number>('SMTP_PORT', 587);
+    return Number(this.configService.get<string>('SMTP_PORT', '587'));
   }
 
   get smtpSecure(): boolean {
-    return this.configService.get<boolean>('SMTP_SECURE', false);
+    return this.configService.get<string>('SMTP_SECURE', 'false') === 'false' ? false : true;
   }
 
   get smtpUser(): string {

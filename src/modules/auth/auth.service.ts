@@ -17,6 +17,7 @@ import { User } from '../user/entities/user.entity';
 import { EmailService } from '../../core/services/email/email.service';
 import { ConfigService } from '../../config/config.service';
 import { OtpService } from '../otp/otp.service';
+import { Otp } from '../otp/entities/otp.entity';
 import {
   LoginDto,
   AuthResponseDto,
@@ -143,10 +144,23 @@ export class AuthService {
     // Check if email already exists
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      // If user is verified, throw error
+      if (existingUser.isVerified) {
+        throw new ConflictException('Email already exists');
+      }
+
+      // If user is not verified, delete the old entry and related OTPs
+      this.logger.log(`Deleting unverified user with email: ${existingUser.email}`);
+
+      // Delete OTPs associated with this user
+      await this.otpService.deleteAllOtpForUser(existingUser.id);
+
+      // Delete the unverified user
+      await this.userRepository.delete(existingUser.id);
+
+      this.logger.log(`Deleted unverified user: ${existingUser.id}`);
     }
 
-    console.log('referralCode', signupInitiateDto.referralCode);
     // Find referrer if referral code provided
     const referrer: User = await this.referralService.validateReferralCode(signupInitiateDto.referralCode);
 
