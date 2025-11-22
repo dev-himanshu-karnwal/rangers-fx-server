@@ -287,6 +287,7 @@ export class AuthService {
 
     // Get user DTO for response
     const userResponse = await this.userService.findOne(updatedUser.id);
+    await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, referralCode);
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 
