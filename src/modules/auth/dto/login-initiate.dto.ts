@@ -1,9 +1,10 @@
 import { IsDefined, IsNotEmpty, IsEmail } from 'class-validator';
 
 /**
- * DTO for forgot password request
+ * DTO for initiating user login (Step 1)
+ * User provides email to receive OTP
  */
-export class ForgotPasswordDto {
+export class LoginInitiateDto {
   @IsDefined()
   @IsNotEmpty()
   @IsEmail()

@@ -1,7 +1,20 @@
-import { createDTO } from '../../../common/dto';
+import { IsDefined, IsNotEmpty, IsString, IsInt, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 /**
  * DTO for password reset
  */
-export const ResetPasswordDto = createDTO('ResetPasswordDto').token().password('newPassword').build();
-export type ResetPasswordDto = InstanceType<typeof ResetPasswordDto>;
+export class ResetPasswordDto {
+  @IsDefined()
+  @IsNotEmpty()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  userId: number;
+
+  @IsDefined()
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  newPassword: string;
+}

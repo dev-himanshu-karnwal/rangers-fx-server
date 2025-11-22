@@ -5,46 +5,49 @@ import { ApiStatus } from '../enums/api-status.enum';
 @Injectable()
 export class AppValidationPipe extends ValidationPipe {
   constructor(options?: ValidationPipeOptions) {
+    const formatErrors = (errors: ValidationError[]): string[] => {
+      const result: string[] = [];
+
+      errors.forEach((err) => {
+        const constraints = err.constraints;
+
+        // Add direct constraint messages
+        if (constraints) {
+          Object.values(constraints).forEach((message) => {
+            result.push(message);
+          });
+        }
+
+        // Handle nested validation errors
+        if (err.children && err.children.length) {
+          const nestedErrors = formatErrors(err.children);
+          result.push(...nestedErrors);
+        }
+      });
+
+      return result;
+    };
+
+    const { transform: _, transformOptions: __, ...restOptions } = options || {};
+
     super({
       whitelist: true,
       forbidNonWhitelisted: false,
       forbidUnknownValues: false,
-      transform: true,
+      transform: options?.transform !== undefined ? options.transform : true,
       transformOptions: {
         enableImplicitConversion: true,
+        ...options?.transformOptions,
       },
       exceptionFactory: (errors: ValidationError[]) => {
-        const formattedErrors = this.formatErrors(errors);
+        const formattedErrors = formatErrors(errors);
         return new BadRequestException({
           status: ApiStatus.ERROR,
           message: 'Data Validation Failed',
           errors: formattedErrors,
         });
       },
-      ...options,
+      ...restOptions,
     });
-  }
-
-  private formatErrors(errors: ValidationError[]): string[] {
-    const result: string[] = [];
-
-    errors.forEach((err) => {
-      const constraints = err.constraints;
-
-      // Add direct constraint messages
-      if (constraints) {
-        Object.values(constraints).forEach((message) => {
-          result.push(message);
-        });
-      }
-
-      // Handle nested validation errors
-      if (err.children && err.children.length) {
-        const nestedErrors = this.formatErrors(err.children);
-        result.push(...nestedErrors);
-      }
-    });
-
-    return result;
   }
 }

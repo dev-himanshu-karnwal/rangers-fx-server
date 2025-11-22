@@ -1,15 +1,32 @@
-import { createDTO } from '../../../common/dto';
+import { IsOptional, IsString, IsEmail, IsEnum, MinLength } from 'class-validator';
 import { UserRole, WorkRole, UserStatus } from '../enums/user.enum';
 
 /**
  * DTO for updating user information
  */
-export const UpdateUserDto = createDTO('UpdateUserDto')
-  .string('fullName', false, { minLength: 2 })
-  .email('email', false)
-  .string('mobileNumber', false)
-  .enum('role', UserRole, false)
-  .enum('workRole', WorkRole, false)
-  .enum('status', UserStatus, false)
-  .build();
-export type UpdateUserDto = InstanceType<typeof UpdateUserDto>;
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  fullName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  mobileNumber?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsEnum(WorkRole)
+  workRole?: WorkRole;
+
+  @IsOptional()
+  @IsEnum(UserStatus)
+  status?: UserStatus;
+}
