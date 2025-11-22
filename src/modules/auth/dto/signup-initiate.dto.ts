@@ -7,6 +7,6 @@ import { createDTO } from '../../../common/dto';
 export const SignupInitiateDto = createDTO('SignupInitiateDto')
   .string('fullName', true, { minLength: 2 })
   .email()
-  .string('referralCode', false)
+  .string('referralCode', true)
   .build();
 export type SignupInitiateDto = InstanceType<typeof SignupInitiateDto>;

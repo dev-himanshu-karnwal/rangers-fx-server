@@ -46,12 +46,12 @@ export class User {
   @Index()
   referralCode: string | null;
 
-  @Column({ type: 'int', name: 'referred_by_user_id' })
+  @Column({ type: 'int', name: 'referred_by_user_id', nullable: true })
   referredByUserId: number | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'referred_by_user_id' })
-  referredBy: User;
+  referredBy?: User | null = null;
 
   @OneToMany(() => User, (user) => user.referredBy)
   referrals: User[];

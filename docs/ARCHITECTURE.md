@@ -85,6 +85,11 @@ src/
 │   ├── interceptors/          # Response interceptors
 │   ├── pipes/                 # Validation pipes
 │   ├── response/              # Standardized response formats
+│   ├── dto/                   # DTO Builder Pattern utilities
+│   │   ├── dto-builder.ts     # Builder class and createDTO function
+│   │   ├── decorators.ts      # Reusable decorator helpers
+│   │   ├── field-types.enum.ts # Field type definitions
+│   │   └── field-definition.interface.ts # Field definition interfaces
 │   └── enums/                 # Shared enums
 │
 ├── core/                      # Core/shared services
@@ -335,6 +340,18 @@ modules/{feature-name}/
 - Output DTOs: Data transformation (exclude sensitive fields)
 - Example: `CreateUserDto` → `UserResponseDto`
 
+### 7. **DTO Builder Pattern**
+
+- Reusable DTO creation using fluent builder API
+- Centralized validation rules to ensure consistency
+- Reduces code duplication across DTOs
+- Located in `common/dto/dto-builder.ts`
+- Example:
+  ```typescript
+  export const LoginDto = createDTO('LoginDto').email().password().build();
+  export type LoginDto = InstanceType<typeof LoginDto>;
+  ```
+
 ### 4. **Dependency Injection**
 
 - All dependencies injected via constructor
@@ -417,11 +434,46 @@ modules/{feature-name}/
 
 ### Validation Decorators
 
-- `@IsEmail()` - Email validation
-- `@IsNotEmpty()` - Required fields
-- `@MinLength()` - Minimum length
-- `@IsEnum()` - Enum validation
-- `@Matches()` - Regex validation
+The application uses a **DTO Builder Pattern** for creating reusable DTOs with consistent validation. All DTOs are created using the `createDTO()` builder function from `common/dto`.
+
+#### Builder Pattern Usage
+
+```typescript
+import { createDTO } from '../../../common/dto';
+
+// Simple DTO
+export const LoginDto = createDTO('LoginDto').email().password().build();
+export type LoginDto = InstanceType<typeof LoginDto>;
+
+// Complex DTO with multiple fields
+export const SignupInitiateDto = createDTO('SignupInitiateDto')
+  .string('fullName', true, { minLength: 2 })
+  .email()
+  .string('referralCode', false)
+  .build();
+export type SignupInitiateDto = InstanceType<typeof SignupInitiateDto>;
+```
+
+#### Available Builder Methods
+
+- `.email(name?, required?)` - Email field with validation
+- `.password(name?, required?, minLength?)` - Password field (default minLength: 8)
+- `.string(name, required?, options?)` - String field with optional minLength/maxLength
+- `.number(name, required?, options?)` - Number field with optional min/max
+- `.userId(name?, required?)` - User ID field (integer, min: 1)
+- `.enum(name, enumClass, required?)` - Enum field validation
+- `.otp(name?, required?)` - OTP string field
+- `.token(name?, required?)` - Token string field
+
+#### Benefits
+
+- **DRY Principle**: No repeated validation decorators
+- **Consistency**: Same validation rules across all DTOs
+- **Maintainability**: Update validation in one place
+- **Type Safety**: Full TypeScript support with `InstanceType<typeof Dto>`
+- **Readability**: Cleaner, more semantic code
+
+For more details, see `src/common/dto/README.md`.
 
 ---
 
@@ -474,9 +526,12 @@ AppModule
 ### 3. **DTOs**
 
 - ✅ Use separate DTOs for create/update/response
-- ✅ Add validation decorators
+- ✅ Use DTO Builder Pattern (`createDTO()`) for all input DTOs
+- ✅ Export both class and type: `export const Dto = createDTO(...).build(); export type Dto = InstanceType<typeof Dto>;`
 - ✅ Exclude sensitive fields in response DTOs
 - ✅ Use class-transformer for transformations
+- ✅ Keep DTOs focused and single-purpose
+- ❌ Don't use manual decorators - use builder pattern instead
 
 ### 4. **Constants**
 
@@ -533,19 +588,46 @@ export class Feature {
 
 #### 3. Create DTOs
 
+**Input DTOs (using Builder Pattern):**
+
 ```typescript
 // dto/create-{feature}.dto.ts
-export class CreateFeatureDto {
-  @IsNotEmpty()
-  @IsString()
-  name: string;
-}
+import { createDTO } from '../../../common/dto';
 
+export const CreateFeatureDto = createDTO('CreateFeatureDto')
+  .string('name', true, { minLength: 2 })
+  .email('email', true)
+  .build();
+export type CreateFeatureDto = InstanceType<typeof CreateFeatureDto>;
+
+// dto/update-{feature}.dto.ts
+export const UpdateFeatureDto = createDTO('UpdateFeatureDto')
+  .string('name', false, { minLength: 2 })
+  .email('email', false)
+  .build();
+export type UpdateFeatureDto = InstanceType<typeof UpdateFeatureDto>;
+```
+
+**Response DTOs (manual class definition):**
+
+```typescript
 // dto/{feature}-response.dto.ts
+import { Exclude, Expose } from 'class-transformer';
+
+@Exclude()
 export class FeatureResponseDto {
+  @Expose()
   id: number;
+
+  @Expose()
   name: string;
-  // ... other fields
+
+  @Expose()
+  email: string;
+
+  constructor(partial: Partial<FeatureResponseDto>) {
+    Object.assign(this, partial);
+  }
 }
 ```
 
@@ -615,7 +697,9 @@ export class AppModule {}
 
 - [ ] Created directory structure
 - [ ] Created entity with proper decorators
-- [ ] Created DTOs with validation
+- [ ] Created input DTOs using builder pattern (`createDTO()`) with validation
+- [ ] Created response DTOs with `@Exclude()` and `@Expose()` decorators
+- [ ] Exported both class and type for input DTOs (`export const Dto = ...; export type Dto = InstanceType<typeof Dto>;`)
 - [ ] Created service with business logic
 - [ ] Created controller with endpoints
 - [ ] Created module definition
@@ -644,6 +728,8 @@ export class AppModule {}
 - `common/filters/api-exception.filter.ts` - Global exception handling
 - `common/interceptors/api-response.interceptor.ts` - Response formatting
 - `common/pipes/app-validation.pipe.ts` - DTO validation
+- `common/dto/dto-builder.ts` - DTO Builder Pattern for creating reusable DTOs
+- `common/dto/decorators.ts` - Reusable validation decorator helpers
 
 ### Shared Services
 
@@ -659,9 +745,17 @@ export class AppModule {}
 - **Services**: `{feature}.service.ts`
 - **Controllers**: `{feature}.controller.ts`
 - **Entities**: `{feature}.entity.ts`
-- **DTOs**: `{action}-{feature}.dto.ts` (e.g., `create-user.dto.ts`)
+- **DTOs**: `{action}-{feature}.dto.ts` (e.g., `create-user.dto.ts`, `login.dto.ts`)
 - **Enums**: `{feature}.enum.ts`
 - **Constants**: `{feature}.constants.ts`
+
+### DTO Creation Guidelines
+
+- **Input DTOs**: Always use `createDTO()` builder pattern
+- **Response DTOs**: Use manual class definition with `@Exclude()` and `@Expose()`
+- **Type Export**: Always export both class and type: `export const Dto = ...; export type Dto = InstanceType<typeof Dto>;`
+- **Builder Methods**: Use semantic method names (`.email()`, `.password()`, `.string()`, etc.)
+- **Optional Fields**: Pass `false` as the `required` parameter (e.g., `.string('name', false)`)
 
 ### Import Order
 

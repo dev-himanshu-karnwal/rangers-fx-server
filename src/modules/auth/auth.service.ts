@@ -146,26 +146,15 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
+    console.log('referralCode', signupInitiateDto.referralCode);
     // Find referrer if referral code provided
-    let referrer: User | null = null;
-    if (signupInitiateDto.referralCode) {
-      referrer = await this.referralService.validateReferralCode(signupInitiateDto.referralCode);
-    }
+    const referrer: User = await this.referralService.validateReferralCode(signupInitiateDto.referralCode);
 
     // Create user entity without password
     const user = this.userRepository.create({
       fullName: signupInitiateDto.fullName,
       email: signupInitiateDto.email,
-      mobileNumber: null,
-      passwordHash: null,
-      passwordUpdatedAt: null,
-      referralCode: null, // Will be generated in step 3
-      referredByUserId: referrer?.id || null,
-      status: UserStatus.ACTIVE,
-      isVerified: false,
-      role: UserRole.USER,
-      workRole: WorkRole.NONE,
-      businessDone: '0.00',
+      referredByUserId: referrer.id,
     });
 
     const savedUser = await this.userRepository.save(user);

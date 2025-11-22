@@ -23,7 +23,7 @@ import { EmailModule } from './core/services/email/email.module';
         password: configService.dbPassword,
         database: configService.dbName,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: !configService.isProduction,
+        synchronize: configService.isDevelopment,
         logging: configService.isDevelopment,
       }),
       inject: [ConfigService],
