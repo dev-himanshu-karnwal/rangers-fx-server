@@ -28,26 +28,42 @@ export class AppValidationPipe extends ValidationPipe {
       return result;
     };
 
-    const { transform: _, transformOptions: __, ...restOptions } = options || {};
+    // Extract options that we want to control explicitly
+    const { transform: _, transformOptions: __, exceptionFactory: ___, ...restOptions } = options || {};
 
-    super({
-      whitelist: true,
-      forbidNonWhitelisted: false,
-      forbidUnknownValues: false,
-      transform: options?.transform !== undefined ? options.transform : true,
+    // Build final options - ensure transform is ALWAYS true
+    const finalOptions: ValidationPipeOptions = {
+      // Core validation settings from user options or defaults
+      whitelist: options?.whitelist ?? true,
+      forbidNonWhitelisted: options?.forbidNonWhitelisted ?? false,
+      forbidUnknownValues: options?.forbidUnknownValues ?? false,
+      skipMissingProperties: options?.skipMissingProperties ?? false,
+
+      // CRITICAL: transform MUST be true for validation to work - never allow it to be false
+      transform: true,
+
+      // Transform options - always enable implicit conversion
       transformOptions: {
         enableImplicitConversion: true,
         ...options?.transformOptions,
       },
+
+      // Custom exception factory - always use our custom one
       exceptionFactory: (errors: ValidationError[]) => {
         const formattedErrors = formatErrors(errors);
+        // Log validation errors for debugging
+        console.log('Validation failed:', formattedErrors);
         return new BadRequestException({
           status: ApiStatus.ERROR,
           message: 'Data Validation Failed',
           errors: formattedErrors,
         });
       },
+
+      // Apply any other user options
       ...restOptions,
-    });
+    };
+
+    super(finalOptions);
   }
 }

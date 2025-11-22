@@ -1,4 +1,4 @@
-import { IsDefined, IsNotEmpty, IsEmail, IsString, MinLength } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsEmail, IsString, MinLength, IsNumber } from 'class-validator';
 
 /**
  * DTO for initiating user signup (Step 1)
@@ -18,6 +18,6 @@ export class SignupInitiateDto {
 
   @IsDefined()
   @IsNotEmpty()
-  @IsString()
-  referralCode: string;
+  @IsNumber()
+  referredByUserId: number;
 }

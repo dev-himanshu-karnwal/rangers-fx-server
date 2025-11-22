@@ -195,7 +195,10 @@ export class AuthService {
     }
 
     // Find referrer if referral code provided
-    const referrer: User = await this.referralService.validateReferralCode(signupInitiateDto.referralCode);
+    const referrer: User | null = await this.userService.findByIdEntity(signupInitiateDto.referredByUserId);
+    if (!referrer) {
+      throw new NotFoundException('Referrer not found');
+    }
 
     // Create user entity without password
     const user = this.userRepository.create({
