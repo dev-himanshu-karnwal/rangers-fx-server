@@ -1,10 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
+import { ApiExceptionFilter } from './common/filters/api-exception.filter';
+import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
+import { AppValidationPipe } from './common/pipes/app-validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  // Enable CORS
+  app.enableCors();
+
+  // Global exception filter for consistent error responses
+  app.useGlobalFilters(new ApiExceptionFilter());
+
+  // Global response interceptor for consistent success responses
+  app.useGlobalInterceptors(new ApiResponseInterceptor());
+
+  // Global validation pipe for DTO validation
+  app.useGlobalPipes(new AppValidationPipe());
+
   await app.listen(configService.port);
+  console.log(`Application is running on: http://localhost:${configService.port}`);
 }
 bootstrap();

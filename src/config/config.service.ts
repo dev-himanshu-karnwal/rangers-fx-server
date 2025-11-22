@@ -6,7 +6,7 @@ export class ConfigService {
   constructor(private configService: NestConfigService) {}
 
   get port(): number {
-    return this.configService.get<number>('PORT', 3000);
+    return this.configService.get<number>('PORT', 5000);
   }
 
   get nodeEnv(): string {
@@ -39,5 +39,45 @@ export class ConfigService {
 
   get isProduction(): boolean {
     return this.nodeEnv === 'production';
+  }
+
+  get smtpHost(): string {
+    return this.configService.get<string>('SMTP_HOST', 'smtp.gmail.com');
+  }
+
+  get smtpPort(): number {
+    return this.configService.get<number>('SMTP_PORT', 587);
+  }
+
+  get smtpSecure(): boolean {
+    return this.configService.get<boolean>('SMTP_SECURE', false);
+  }
+
+  get smtpUser(): string {
+    return this.configService.get<string>('SMTP_USER', '');
+  }
+
+  get smtpPassword(): string {
+    return this.configService.get<string>('SMTP_PASSWORD', '');
+  }
+
+  get smtpFromEmail(): string {
+    return this.configService.get<string>('SMTP_FROM_EMAIL', 'noreply@rangersfx.com');
+  }
+
+  get smtpFromName(): string {
+    return this.configService.get<string>('SMTP_FROM_NAME', 'Rangers FX');
+  }
+
+  get appUrl(): string {
+    return this.configService.get<string>('APP_URL', 'http://localhost:3000');
+  }
+
+  get jwtSecret(): string {
+    return this.configService.get<string>('JWT_SECRET', 'your-secret-key-change-in-production');
+  }
+
+  get jwtExpiresIn(): string {
+    return this.configService.get<string>('JWT_EXPIRES_IN', '2d');
   }
 }

@@ -1,0 +1,93 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
+import { UserStatus, UserRole, WorkRole } from '../enums/user.enum';
+
+/**
+ * User entity representing a user in the system.
+ * Maps to the 'users' table in the database.
+ */
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'varchar', length: 200 })
+  fullName: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  @Index()
+  email: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  @Index()
+  mobileNumber: string;
+
+  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
+  passwordHash: string;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'password_updated_at' })
+  passwordUpdatedAt: Date | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true, name: 'reset_password_token' })
+  resetPasswordToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'reset_password_expires_at' })
+  resetPasswordExpiresAt: Date | null;
+
+  @Column({ type: 'varchar', length: 64, unique: true, name: 'referral_code' })
+  @Index()
+  referralCode: string;
+
+  @Column({ type: 'int', name: 'referred_by_user_id' })
+  referredByUserId: number | null;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'referred_by_user_id' })
+  referredBy: User;
+
+  @OneToMany(() => User, (user) => user.referredBy)
+  referrals: User[];
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
+  })
+  status: UserStatus;
+
+  @Column({ type: 'boolean', default: false, name: 'is_verified' })
+  isVerified: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
+
+  @Column({
+    type: 'enum',
+    enum: WorkRole,
+    default: WorkRole.INVESTOR,
+    name: 'work_role',
+  })
+  workRole: WorkRole;
+
+  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'business_done' })
+  businessDone: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
