@@ -71,10 +71,10 @@ export class EmailService {
    * Send welcome email to new user
    * @param email - User email address
    * @param name - User full name
-   * @param referralCode - User referral code
+   * @param referralCode - User referral code (nullable)
    */
-  async sendWelcomeEmail(email: string, name: string, referralCode: string): Promise<void> {
-    const html = this.emailTemplateService.getWelcomeTemplate(name, referralCode);
+  async sendWelcomeEmail(email: string, name: string, referralCode: string | null): Promise<void> {
+    const html = this.emailTemplateService.getWelcomeTemplate(name, referralCode || '');
     await this.sendEmail({
       to: email,
       subject: 'Welcome to Rangers FX',

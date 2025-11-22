@@ -27,12 +27,11 @@ export class User {
   @Index()
   email: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
-  @Index()
-  mobileNumber: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  mobileNumber: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
-  passwordHash: string;
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_hash' })
+  passwordHash: string | null;
 
   @Column({ type: 'timestamp', nullable: true, name: 'password_updated_at' })
   passwordUpdatedAt: Date | null;
@@ -43,9 +42,9 @@ export class User {
   @Column({ type: 'timestamp', nullable: true, name: 'reset_password_expires_at' })
   resetPasswordExpiresAt: Date | null;
 
-  @Column({ type: 'varchar', length: 64, unique: true, name: 'referral_code' })
+  @Column({ type: 'varchar', length: 64, unique: true, nullable: true, name: 'referral_code' })
   @Index()
-  referralCode: string;
+  referralCode: string | null;
 
   @Column({ type: 'int', name: 'referred_by_user_id' })
   referredByUserId: number | null;
@@ -77,7 +76,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: WorkRole,
-    default: WorkRole.INVESTOR,
+    default: WorkRole.NONE,
     name: 'work_role',
   })
   workRole: WorkRole;

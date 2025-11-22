@@ -20,6 +20,7 @@ export enum UserRole {
  * Work role enum for business classification
  */
 export enum WorkRole {
+  NONE = 'none',
   INVESTOR = 'investor',
   WORKER = 'worker',
 }

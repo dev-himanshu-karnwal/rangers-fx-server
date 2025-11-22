@@ -1,35 +1,15 @@
-import { IsEmail, IsOptional, IsString, IsEnum, MinLength, Matches } from 'class-validator';
+import { createDTO } from '../../../common/dto';
 import { UserRole, WorkRole, UserStatus } from '../enums/user.enum';
 
 /**
  * DTO for updating user information
  */
-export class UpdateUserDto {
-  @IsOptional()
-  @IsString()
-  @MinLength(2)
-  fullName?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^\+?[1-9]\d{1,14}$/, {
-    message: 'Mobile number must be a valid international format',
-  })
-  mobileNumber?: string;
-
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
-
-  @IsOptional()
-  @IsEnum(WorkRole)
-  workRole?: WorkRole;
-
-  @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus;
-}
+export const UpdateUserDto = createDTO('UpdateUserDto')
+  .string('fullName', false, { minLength: 2 })
+  .email('email', false)
+  .string('mobileNumber', false)
+  .enum('role', UserRole, false)
+  .enum('workRole', WorkRole, false)
+  .enum('status', UserStatus, false)
+  .build();
+export type UpdateUserDto = InstanceType<typeof UpdateUserDto>;

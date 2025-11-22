@@ -1,14 +1,7 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { createDTO } from '../../../common/dto';
 
 /**
  * DTO for user login
  */
-export class LoginDto {
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-
-  @IsNotEmpty()
-  @IsString()
-  password: string;
-}
+export const LoginDto = createDTO('LoginDto').email().password().build();
+export type LoginDto = InstanceType<typeof LoginDto>;

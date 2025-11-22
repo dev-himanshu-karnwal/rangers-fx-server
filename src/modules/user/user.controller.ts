@@ -8,7 +8,6 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
  * Follows RESTful conventions
  */
 @Controller('users')
-@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -41,6 +40,7 @@ export class UserController {
    * @returns Updated user response DTO
    */
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);

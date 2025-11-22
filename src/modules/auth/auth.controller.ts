@@ -1,7 +1,16 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
-import { RegisterDto, LoginDto, AuthResponseDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
+import {
+  LoginDto,
+  AuthResponseDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  SignupInitiateDto,
+  VerifyOtpDto,
+  CompleteSignupDto,
+} from './dto';
+import { UserResponseDto } from '../user/dto';
 
 /**
  * Auth controller handling authentication endpoints
@@ -10,18 +19,6 @@ import { RegisterDto, LoginDto, AuthResponseDto, ForgotPasswordDto, ResetPasswor
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  /**
-   * Register a new user
-   * @param registerDto - Registration data
-   * @returns Authentication response with token and user
-   */
-  @Post('register')
-  @Public()
-  @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(registerDto);
-  }
 
   /**
    * Login user
@@ -57,5 +54,41 @@ export class AuthController {
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
     await this.authService.resetPassword(resetPasswordDto);
     return { message: 'Password reset successfully' };
+  }
+
+  /**
+   * Step 1: Initiate signup - create user without password, send OTP
+   * @param signupInitiateDto - Signup initiation data
+   * @returns Created user response DTO
+   */
+  @Post('signup/initiate')
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<UserResponseDto> {
+    return this.authService.signupInitiate(signupInitiateDto);
+  }
+
+  /**
+   * Step 2: Verify OTP - common API for all OTP verification purposes
+   * @param verifyOtpDto - OTP verification data
+   * @returns Success message
+   */
+  @Post('otp/verify')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<{ message: string }> {
+    return this.authService.verifyOtp(verifyOtpDto);
+  }
+
+  /**
+   * Step 3: Complete signup - set password, generate referral code, verify user
+   * @param completeSignupDto - Complete signup data
+   * @returns Authentication response with token and user
+   */
+  @Post('signup/complete')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async completeSignup(@Body() completeSignupDto: CompleteSignupDto): Promise<AuthResponseDto> {
+    return this.authService.completeSignup(completeSignupDto);
   }
 }

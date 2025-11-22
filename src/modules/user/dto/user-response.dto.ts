@@ -16,10 +16,10 @@ export class UserResponseDto {
   email: string;
 
   @Expose()
-  mobileNumber: string;
+  mobileNumber: string | null;
 
   @Expose()
-  referralCode: string;
+  referralCode: string | null;
 
   @Expose()
   referredByUserId: number | null;
