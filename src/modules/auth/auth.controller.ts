@@ -11,6 +11,7 @@ import {
   CompleteSignupDto,
 } from './dto';
 import { UserResponseDto } from '../user/dto';
+import { ApiResponse } from 'src/common/response/api.response';
 
 /**
  * Auth controller handling authentication endpoints
@@ -64,7 +65,7 @@ export class AuthController {
   @Post('signup/initiate')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<UserResponseDto> {
+  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     return this.authService.signupInitiate(signupInitiateDto);
   }
 
@@ -76,7 +77,7 @@ export class AuthController {
   @Post('otp/verify')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<{ message: string }> {
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<ApiResponse<null>> {
     return this.authService.verifyOtp(verifyOtpDto);
   }
 
@@ -88,7 +89,7 @@ export class AuthController {
   @Post('signup/complete')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async completeSignup(@Body() completeSignupDto: CompleteSignupDto): Promise<AuthResponseDto> {
+  async completeSignup(@Body() completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
     return this.authService.completeSignup(completeSignupDto);
   }
 }

@@ -33,6 +33,7 @@ import { AUTH_CONSTANTS } from './constants/auth.constants';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { UserStatus, UserRole, WorkRole } from '../user/enums/user.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
+import { ApiResponse } from 'src/common/response/api.response';
 
 /**
  * Auth service handling authentication and authorization logic
@@ -140,7 +141,7 @@ export class AuthService {
    * @param signupInitiateDto - Signup initiation data (email, name, referralCode)
    * @returns Created user response DTO
    */
-  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<UserResponseDto> {
+  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     // Check if email already exists
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
     if (existingUser) {
@@ -179,7 +180,7 @@ export class AuthService {
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
-    return new UserResponseDto(savedUser);
+    return ApiResponse.success('OTP Sent Successfully. ', new UserResponseDto(savedUser));
   }
 
   /**
@@ -187,7 +188,7 @@ export class AuthService {
    * @param verifyOtpDto - OTP verification data (userId, otp, purpose)
    * @returns Success message
    */
-  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{ message: string }> {
+  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<ApiResponse<null>> {
     // Verify user exists
     const user = await this.userService.findByIdEntity(verifyOtpDto.userId);
     if (!user) {
@@ -195,15 +196,15 @@ export class AuthService {
     }
 
     // Match OTP
-    const isValid = await this.otpService.matchOtp(verifyOtpDto.userId, verifyOtpDto.otp, verifyOtpDto.purpose);
+    const message = await this.otpService.matchOtp(verifyOtpDto.userId, verifyOtpDto.otp, verifyOtpDto.purpose);
 
-    if (!isValid) {
-      throw new BadRequestException('Invalid or expired OTP');
+    if (!message) {
+      throw new BadRequestException(message);
     }
 
     this.logger.log(`OTP verified for user: ${verifyOtpDto.userId}, purpose: ${verifyOtpDto.purpose}`);
 
-    return { message: 'OTP verified successfully' };
+    return ApiResponse.success(message);
   }
 
   /**
@@ -211,7 +212,7 @@ export class AuthService {
    * @param completeSignupDto - Complete signup data (userId, password)
    * @returns Authentication response with token and user
    */
-  async completeSignup(completeSignupDto: CompleteSignupDto): Promise<AuthResponseDto> {
+  async completeSignup(completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
     // Find user
     const user = await this.userService.findByIdEntity(completeSignupDto.userId);
     if (!user) {
@@ -249,10 +250,10 @@ export class AuthService {
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 
-    return new AuthResponseDto({
+    return ApiResponse.success('Registration completed successfully', new AuthResponseDto({
       accessToken,
-      user: userResponse,
-    });
+      user: userResponse}
+    ));
   }
 
   /**

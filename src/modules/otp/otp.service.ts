@@ -55,7 +55,7 @@ export class OtpService {
    * @param purpose - Purpose of the OTP
    * @returns True if OTP matches, false otherwise
    */
-  async matchOtp(userId: number, otpCode: string, purpose: OtpPurpose): Promise<boolean> {
+  async matchOtp(userId: number, otpCode: string, purpose: OtpPurpose): Promise<string> {
     // Find the OTP
     const otp = await this.otpRepository.findOne({
       where: {
@@ -66,19 +66,19 @@ export class OtpService {
     });
 
     if (!otp) {
-      return false;
+      return "OTP is Invalid";
     }
 
     // Check if OTP is expired
     if (new Date() > otp.expiresAt) {
       // Delete expired OTP
       await this.otpRepository.delete(otp.id);
-      return false;
+      return "Otp is Expired";
     }
 
     // OTP matched - delete it and return success
     await this.otpRepository.delete(otp.id);
-    return true;
+    return "Otp Verified Successfully";
   }
 
   /**
