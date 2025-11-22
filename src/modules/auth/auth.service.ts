@@ -28,7 +28,6 @@ import {
 } from './dto';
 import { UserResponseDto } from '../user/dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { AUTH_CONSTANTS } from './constants/auth.constants';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -233,15 +232,19 @@ export class AuthService {
     }
 
     // Match OTP
-    const message = await this.otpService.matchOtp(verifyOtpDto.userId, verifyOtpDto.otp, verifyOtpDto.purpose);
+    const { isMatched, message } = await this.otpService.matchOtp(
+      verifyOtpDto.userId,
+      verifyOtpDto.otp,
+      verifyOtpDto.purpose,
+    );
 
-    if (!message) {
+    if (!isMatched) {
       throw new BadRequestException(message);
     }
 
     this.logger.log(`OTP verified for user: ${verifyOtpDto.userId}, purpose: ${verifyOtpDto.purpose}`);
 
-    return ApiResponse.success(message);
+    return ApiResponse.success(message, null);
   }
 
   /**
@@ -287,10 +290,13 @@ export class AuthService {
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 
-    return ApiResponse.success('Registration completed successfully', new AuthResponseDto({
-      accessToken,
-      user: userResponse}
-    ));
+    return ApiResponse.success(
+      'Registration completed successfully',
+      new AuthResponseDto({
+        accessToken,
+        user: userResponse,
+      }),
+    );
   }
 
   /**
