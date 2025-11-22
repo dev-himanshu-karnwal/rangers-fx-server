@@ -1,8 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
-  LoginDto,
+  LoginInitiateDto,
+  CompleteLoginDto,
   AuthResponseDto,
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -21,15 +22,27 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Login user
-   * @param loginDto - Login credentials
-   * @returns Authentication response with token and user
+   * Step 1: Initiate login - send OTP to email
+   * @param loginInitiateDto - Login initiation data (email)
+   * @returns User response DTO
    */
-  @Post('login')
+  @Post('login/initiate')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
+  async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<UserResponseDto> {
+    return this.authService.loginInitiate(loginInitiateDto);
+  }
+
+  /**
+   * Step 3: Complete login - authenticate with email and password
+   * @param completeLoginDto - Complete login data (email, password)
+   * @returns Authentication response with token and user
+   */
+  @Post('login/complete')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async completeLogin(@Body() completeLoginDto: CompleteLoginDto): Promise<AuthResponseDto> {
+    return this.authService.completeLogin(completeLoginDto);
   }
 
   /**
@@ -73,7 +86,7 @@ export class AuthController {
    * @param verifyOtpDto - OTP verification data
    * @returns Success message
    */
-  @Post('otp/verify')
+  @Patch('otp/verify')
   @Public()
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<{ message: string }> {

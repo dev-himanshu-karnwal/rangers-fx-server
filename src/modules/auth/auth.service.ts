@@ -17,9 +17,9 @@ import { User } from '../user/entities/user.entity';
 import { EmailService } from '../../core/services/email/email.service';
 import { ConfigService } from '../../config/config.service';
 import { OtpService } from '../otp/otp.service';
-import { Otp } from '../otp/entities/otp.entity';
 import {
-  LoginDto,
+  LoginInitiateDto,
+  CompleteLoginDto,
   AuthResponseDto,
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -31,7 +31,6 @@ import { UserResponseDto } from '../user/dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
 import { OtpPurpose } from '../otp/enums/otp.enum';
-import { UserStatus, UserRole, WorkRole } from '../user/enums/user.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
 
 /**
@@ -54,19 +53,50 @@ export class AuthService {
   ) {}
 
   /**
-   * Login user with email and password
-   * @param loginDto - Login credentials
+   * Step 1: Initiate login - send OTP to email
+   * @param loginInitiateDto - Login initiation data (email)
+   * @returns User response DTO
+   */
+  async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<UserResponseDto> {
+    // Find user by email
+    const user = await this.userService.findByEmail(loginInitiateDto.email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user is verified
+    if (!user.isVerified) {
+      throw new BadRequestException('User email not verified');
+    }
+
+    // Check if user has a password (user must have completed signup)
+    if (!user.passwordHash) {
+      throw new BadRequestException('User signup not completed');
+    }
+
+    // Generate and send OTP
+    const otpCode = await this.otpService.generateOtp(user.id, OtpPurpose.LOGIN);
+    await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+
+    this.logger.log(`Login OTP sent to user: ${user.email}`);
+
+    return new UserResponseDto({});
+  }
+
+  /**
+   * Step 3: Complete login - authenticate with email and password
+   * @param completeLoginDto - Complete login data (email, password)
    * @returns Authentication response with token and user
    */
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    // Find user by email
-    const user = await this.userService.findByEmailWithPassword(loginDto.email);
+  async completeLogin(completeLoginDto: CompleteLoginDto): Promise<AuthResponseDto> {
+    // Find user by email with password
+    const user = await this.userService.findByEmailWithPassword(completeLoginDto.email);
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(completeLoginDto.password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
