@@ -10,7 +10,6 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { UserService } from '../user/user.service';
 import { ReferralService } from '../user/services/referral.service';
 import { User } from '../user/entities/user.entity';
@@ -95,6 +94,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if a LOGIN OTP still exists for this user
+    const existingLoginOtp = await this.otpService.findActiveOtp(user.id, OtpPurpose.LOGIN);
+    if (existingLoginOtp) {
+      throw new BadRequestException('An active login OTP still exists. Please use the OTP or wait until it expires.');
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(completeLoginDto.password, user.passwordHash);
     if (!isPasswordValid) {
@@ -116,53 +121,50 @@ export class AuthService {
   }
 
   /**
-   * Initiate password reset process
+   * Initiate password reset process - send OTP
    * @param forgotPasswordDto - Email address
+   * @returns User response DTO with userId
    */
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
-    const user = await this.userService.findByEmailWithPassword(forgotPasswordDto.email);
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<UserResponseDto> {
+    const user = await this.userService.findByEmail(forgotPasswordDto.email);
     if (!user) {
-      // Don't reveal if email exists for security
-      this.logger.warn(`Password reset requested for non-existent email: ${forgotPasswordDto.email}`);
-      return;
+      throw new NotFoundException('User not found');
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date();
-    resetExpires.setHours(resetExpires.getHours() + AUTH_CONSTANTS.RESET_TOKEN_EXPIRATION_HOURS);
+    // Generate and send OTP
+    const otpCode = await this.otpService.generateOtp(user.id, OtpPurpose.FORGOT_PASSWORD);
+    await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
 
-    // Save reset token to user
-    await this.userService.updateResetToken(user.id, resetToken, resetExpires);
+    this.logger.log(`Forgot password OTP sent to user: ${user.email}`);
 
-    // Send password reset email
-    await this.emailService.sendPasswordResetEmail(user.email, user.fullName, resetToken);
-
-    this.logger.log(`Password reset email sent to: ${user.email}`);
+    // Return user with userId
+    return new UserResponseDto({ id: user.id });
   }
 
   /**
-   * Reset password using reset token
-   * @param resetPasswordDto - Reset token and new password
+   * Reset password using OTP verification
+   * @param resetPasswordDto - User ID and new password
    */
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
-    const user = await this.userService.findByResetToken(resetPasswordDto.token);
+    // Find user
+    const user = await this.userService.findByIdEntity(resetPasswordDto.userId);
     if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new NotFoundException('User not found');
     }
 
-    // Check if token has expired
-    if (!user.resetPasswordExpiresAt || user.resetPasswordExpiresAt < new Date()) {
-      throw new BadRequestException('Reset token has expired');
+    // Check if a FORGOT_PASSWORD OTP still exists for this user (same as login check)
+    const existingForgotPasswordOtp = await this.otpService.findActiveOtp(
+      resetPasswordDto.userId,
+      OtpPurpose.FORGOT_PASSWORD,
+    );
+    if (existingForgotPasswordOtp) {
+      throw new BadRequestException('An active forgot password OTP still exists. Please verify the OTP first.');
     }
 
     // Update password
-    await this.userService.updatePassword(user.id, resetPasswordDto.newPassword);
+    await this.userService.updatePassword(resetPasswordDto.userId, resetPasswordDto.newPassword);
 
-    // Clear reset token
-    await this.userService.updateResetToken(user.id, null, null);
-
-    this.logger.log(`Password reset successful for user: ${user.id}`);
+    this.logger.log(`Password reset successful for user: ${resetPasswordDto.userId}`);
   }
 
   /**

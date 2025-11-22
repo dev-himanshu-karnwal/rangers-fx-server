@@ -26,7 +26,7 @@ export class AuthController {
    * @param loginInitiateDto - Login initiation data (email)
    * @returns User response DTO
    */
-  @Post('login/initiate')
+  @Patch('login/initiate')
   @Public()
   @HttpCode(HttpStatus.OK)
   async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<UserResponseDto> {
@@ -46,20 +46,20 @@ export class AuthController {
   }
 
   /**
-   * Request password reset
+   * Request password reset - send OTP
    * @param forgotPasswordDto - Email address
+   * @returns User response DTO with userId
    */
-  @Post('forgot-password')
+  @Patch('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
-    await this.authService.forgotPassword(forgotPasswordDto);
-    return { message: 'If the email exists, a password reset link has been sent' };
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<UserResponseDto> {
+    return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   /**
-   * Reset password using token
-   * @param resetPasswordDto - Reset token and new password
+   * Reset password using OTP verification
+   * @param resetPasswordDto - User ID and new password
    */
   @Post('reset-password')
   @Public()
@@ -82,7 +82,7 @@ export class AuthController {
   }
 
   /**
-   * Step 2: Verify OTP - common API for all OTP verification purposes
+   * Verify OTP - common API for all OTP verification purposes
    * @param verifyOtpDto - OTP verification data
    * @returns Success message
    */

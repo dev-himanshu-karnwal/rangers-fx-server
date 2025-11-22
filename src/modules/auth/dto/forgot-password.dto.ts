@@ -1,7 +1,11 @@
-import { createDTO } from '../../../common/dto';
+import { IsDefined, IsNotEmpty, IsEmail } from 'class-validator';
 
 /**
  * DTO for forgot password request
  */
-export const ForgotPasswordDto = createDTO('ForgotPasswordDto').email().build();
-export type ForgotPasswordDto = InstanceType<typeof ForgotPasswordDto>;
+export class ForgotPasswordDto {
+  @IsDefined()
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
+}

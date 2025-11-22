@@ -19,7 +19,18 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ApiResponseInterceptor());
 
   // Global validation pipe for DTO validation
-  app.useGlobalPipes(new AppValidationPipe());
+  app.useGlobalPipes(
+    new AppValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      forbidUnknownValues: true,
+      skipMissingProperties: false,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   await app.listen(configService.port);
   console.log(`Application is running on: http://localhost:${configService.port}`);

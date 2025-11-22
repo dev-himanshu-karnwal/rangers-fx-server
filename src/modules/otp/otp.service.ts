@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { Otp } from './entities/otp.entity';
 import { OtpPurpose } from './enums/otp.enum';
 import { OTP_CONSTANTS } from './constants/otp.constants';
@@ -99,5 +99,15 @@ export class OtpService {
    */
   async deleteAllOtpForUser(userId: number): Promise<void> {
     await this.otpRepository.delete({ userId });
+  }
+
+  /**
+   * Find an active OTP for a user and purpose
+   * @param userId - User ID
+   * @param purpose - Purpose of the OTP
+   * @returns OTP entity or null
+   */
+  async findActiveOtp(userId: number, purpose: OtpPurpose): Promise<Otp | null> {
+    return this.otpRepository.findOne({ where: { userId, purpose, expiresAt: MoreThan(new Date()) } });
   }
 }
