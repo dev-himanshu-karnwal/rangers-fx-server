@@ -66,6 +66,9 @@ export class User {
   @Column({ type: 'boolean', default: false, name: 'is_verified' })
   isVerified: boolean;
 
+  @Column({ type: 'boolean', default: false, name: 'has_children' })
+  hasChildren: boolean;
+
   @Column({
     type: 'enum',
     enum: UserRole,
