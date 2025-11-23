@@ -59,12 +59,9 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserStatus,
-    default: UserStatus.ACTIVE,
+    default: UserStatus.UNVERIFIED,
   })
   status: UserStatus;
-
-  @Column({ type: 'boolean', default: false, name: 'is_verified' })
-  isVerified: boolean;
 
   @Column({ type: 'boolean', default: false, name: 'has_children' })
   hasChildren: boolean;

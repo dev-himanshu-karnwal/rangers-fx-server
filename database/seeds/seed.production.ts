@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../../src/modules/user/entities/user.entity';
 import { Wallet } from '../../src/modules/wallets/entities/wallet.entity';
 import { WalletType } from '../../src/modules/wallets/enums/wallet.enum';
-import { UserRole, WorkRole } from '../../src/modules/user/enums/user.enum';
+import { UserRole, WorkRole, UserStatus } from '../../src/modules/user/enums/user.enum';
 
 // Load environment variables from .env.production file
 // Works from both TypeScript source and compiled JavaScript
@@ -41,7 +41,7 @@ async function seed() {
       email: 'himanshukar1810@example.com',
       mobileNumber: '+1234567890',
       passwordHash: await bcrypt.hash('Admin@123', 10),
-      isVerified: true,
+      status: UserStatus.ACTIVE,
       role: UserRole.ADMIN,
       workRole: WorkRole.NONE,
     };

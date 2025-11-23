@@ -9,6 +9,7 @@ import { ApiResponse } from '../../common/response/api.response';
 import { ReferralService } from './services/referral.service';
 import { UserClosureService } from './closure/closure.service';
 import { WalletService } from '../wallets/wallet.service';
+import { UserStatus } from './enums/user.enum';
 
 /**
  * User service handling business logic for user operations
@@ -190,17 +191,11 @@ export class UserService {
   }
 
   /**
-   * Mark user as verified
+   * Mark user as verified (change status to inactive)
    * @param email - User email
    */
   async verifyUser(email: string): Promise<void> {
-    const user = await this.findByEmail(email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    user.isVerified = true;
-    await this.userRepository.save(user);
+    await this.userRepository.update({ email }, { status: UserStatus.INACTIVE });
     this.logger.log(`User verified: ${email}`);
   }
 
@@ -211,27 +206,25 @@ export class UserService {
    * @param referredByUserId - Referrer user ID
    * @returns Created user entity
    */
-  async createUnverifiedUser(email: string, fullName: string, referredByUserId: number | null): Promise<User> {
+  async createUnverifiedUser(email: string, fullName: string, referredByUserId: number): Promise<User> {
     // Check if email already exists
     const existingUser = await this.findByEmail(email);
     if (existingUser) {
-      // If user is verified, throw error
-      if (existingUser.isVerified) {
+      // If user is not unverified, throw error
+      if (existingUser.status !== UserStatus.UNVERIFIED) {
         throw new ConflictException('Email already exists');
       }
 
-      // If user is not verified, delete the old entry
+      // If user is unverified, delete the old entry
       this.logger.log(`Deleting unverified user with email: ${existingUser.email}`);
       await this.userRepository.delete(existingUser.id);
       this.logger.log(`Deleted unverified user: ${existingUser.id}`);
     }
 
-    // Validate referrer if provided
-    if (referredByUserId) {
-      const referrer = await this.findByIdEntity(referredByUserId);
-      if (!referrer) {
-        throw new NotFoundException('Referrer not found');
-      }
+    // Validate referrer
+    const referrer = await this.findByIdEntity(referredByUserId);
+    if (!referrer) {
+      throw new NotFoundException('Referrer not found');
     }
 
     // Create user entity without password
@@ -285,8 +278,7 @@ export class UserService {
     // Create closure table entries for the new user
     // This creates the self-row (depth=0) and all ancestor rows if parent exists
     try {
-      const businessAmount = updatedUser.businessDone ? updatedUser.businessDone : null;
-      await this.userClosureService.createClosuresForUser(updatedUser.id, updatedUser.referredByUserId, businessAmount);
+      await this.userClosureService.createClosuresForUser(updatedUser.id, updatedUser.referredByUserId);
       this.logger.log(`Closure entries created for user: ${updatedUser.email}`);
     } catch (error) {
       // Log error but don't fail signup - closure entries are important but shouldn't block user registration

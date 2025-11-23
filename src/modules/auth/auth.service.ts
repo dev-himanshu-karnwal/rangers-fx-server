@@ -20,6 +20,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
+import { UserStatus } from '../user/enums/user.enum';
 import { UserResponseDto } from '../user/dto';
 
 /**
@@ -50,8 +51,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if user is verified
-    if (!user.isVerified) {
+    // Check if user is verified (status should not be unverified)
+    if (user.status === UserStatus.UNVERIFIED) {
       throw new BadRequestException('User email not verified');
     }
 
@@ -184,7 +185,7 @@ export class AuthService {
   async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     // Delete OTPs for existing unverified user (if any) before creating new user
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
-    if (existingUser && !existingUser.isVerified) {
+    if (existingUser && existingUser.status === UserStatus.UNVERIFIED) {
       await this.otpService.deleteAllOtpForUser(existingUser.email);
     }
 

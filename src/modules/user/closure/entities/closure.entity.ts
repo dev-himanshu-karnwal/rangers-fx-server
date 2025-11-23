@@ -17,9 +17,6 @@ export class UserClosure {
   @Column({ type: 'int', name: 'root_child_id', nullable: true })
   rootChildId?: number | null;
 
-  @Column({ type: 'numeric', precision: 18, scale: 2, name: 'descendant_business_amount', nullable: true })
-  descendantBusinessAmount?: number | null;
-
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }

@@ -49,13 +49,8 @@ export class UserClosureService {
    * - rootChildId for the new rows is set using this logic:
    *     - when parentRow.depth === 0 (i.e. ancestor == parent), rootChildId := parentId
    *     - otherwise, rootChildId := parentRow.rootChildId (so we propagate the parent's root_child mapping)
-   * - descendantBusinessAmount can be optionally provided to populate the denormalized column for the self-row
    */
-  async createClosuresForUser(
-    userId: number,
-    parentId?: number | null,
-    descendantBusinessAmount?: number | null,
-  ): Promise<UserClosure[]> {
+  async createClosuresForUser(userId: number, parentId?: number | null): Promise<UserClosure[]> {
     if (!userId) {
       throw new BadRequestException('userId is required');
     }
@@ -66,7 +61,6 @@ export class UserClosureService {
       descendantId: userId,
       depth: 0,
       rootChildId: null,
-      descendantBusinessAmount,
     });
 
     const rowsToSave: UserClosure[] = [selfRow];
@@ -89,7 +83,6 @@ export class UserClosureService {
           descendantId: userId,
           depth: 1,
           rootChildId: userId, // immediate child under parent is the new user
-          descendantBusinessAmount,
         });
         rowsToSave.push(fallback);
       } else {
@@ -107,7 +100,6 @@ export class UserClosureService {
             descendantId: userId,
             depth: pa.depth + 1,
             rootChildId: newRootChildId,
-            descendantBusinessAmount,
           });
           rowsToSave.push(newRow);
         }

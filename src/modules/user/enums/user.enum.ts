@@ -2,8 +2,9 @@
  * User account status enum
  */
 export enum UserStatus {
-  ACTIVE = 'active',
+  UNVERIFIED = 'unverified',
   INACTIVE = 'inactive',
+  ACTIVE = 'active',
   SUSPENDED = 'suspended',
   DELETED = 'deleted',
 }

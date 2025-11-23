@@ -29,9 +29,6 @@ export class UserResponseDto {
   status: UserStatus;
 
   @Expose()
-  isVerified: boolean;
-
-  @Expose()
   hasChildren: boolean | null;
 
   @Expose()
