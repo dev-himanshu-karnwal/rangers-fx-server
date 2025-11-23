@@ -11,7 +11,6 @@ import {
   VerifyOtpDto,
   CompleteSignupDto,
 } from './dto';
-import { UserResponseDto } from '../user/dto';
 import { ApiResponse } from 'src/common/response/api.response';
 
 /**
@@ -25,12 +24,12 @@ export class AuthController {
   /**
    * Step 1: Initiate login - send OTP to email
    * @param loginInitiateDto - Login initiation data (email)
-   * @returns User response DTO
+   * @returns Success response without user data
    */
   @Patch('login/initiate')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async loginInitiate(@Body() loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<null>> {
     return this.authService.loginInitiate(loginInitiateDto);
   }
 
@@ -49,36 +48,36 @@ export class AuthController {
   /**
    * Request password reset - send OTP
    * @param forgotPasswordDto - Email address
-   * @returns User response DTO with userId
+   * @returns Success response without user data
    */
   @Patch('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<UserResponseDto>> {
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<null>> {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  /** 
+  /**
    * Reset password using OTP verification
-   * @param resetPasswordDto - User ID and new password
+   * @param resetPasswordDto - User email and new password
    */
   @Patch('reset-password')
   @Public()
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<ApiResponse<null>> {
     await this.authService.resetPassword(resetPasswordDto);
-    return ApiResponse.success("Password Reset Successfully");
+    return ApiResponse.success('Password Reset Successfully', null);
   }
 
   /**
    * Step 1: Initiate signup - create user without password, send OTP
    * @param signupInitiateDto - Signup initiation data
-   * @returns Created user response DTO
+   * @returns Success response without user data
    */
   @Post('signup/initiate')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
     return this.authService.signupInitiate(signupInitiateDto);
   }
 

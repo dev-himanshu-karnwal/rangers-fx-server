@@ -1,5 +1,4 @@
-import { IsDefined, IsNotEmpty, IsString, IsInt, Min, MinLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsDefined, IsNotEmpty, IsEmail, IsString, MinLength } from 'class-validator';
 
 /**
  * DTO for password reset
@@ -7,10 +6,8 @@ import { Type } from 'class-transformer';
 export class ResetPasswordDto {
   @IsDefined()
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  userId: number;
+  @IsEmail()
+  userEmail: string;
 
   @IsDefined()
   @IsNotEmpty()

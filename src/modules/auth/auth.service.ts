@@ -26,7 +26,6 @@ import {
   VerifyOtpDto,
   CompleteSignupDto,
 } from './dto';
-import { UserResponseDto } from '../user/dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
@@ -54,9 +53,9 @@ export class AuthService {
   /**
    * Step 1: Initiate login - send OTP to email
    * @param loginInitiateDto - Login initiation data (email)
-   * @returns User response DTO
+   * @returns Success response without user data
    */
-  async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<null>> {
     // Find user by email
     const user = await this.userService.findByEmail(loginInitiateDto.email);
     if (!user) {
@@ -74,12 +73,12 @@ export class AuthService {
     }
 
     // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(user.id, OtpPurpose.LOGIN);
+    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.LOGIN);
     await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
 
     this.logger.log(`Login OTP sent to user: ${user.email}`);
 
-    return ApiResponse.success('OTP Sent Successfully.', new UserResponseDto({id:user.id,email:user.email,}));
+    return ApiResponse.success('OTP Sent Successfully.', null);
   }
 
   /**
@@ -95,7 +94,7 @@ export class AuthService {
     }
 
     // Check if a LOGIN OTP still exists for this user
-    const existingLoginOtp = await this.otpService.findActiveOtp(user.id, OtpPurpose.LOGIN);
+    const existingLoginOtp = await this.otpService.findActiveOtp(user.email, OtpPurpose.LOGIN);
     if (existingLoginOtp) {
       throw new BadRequestException('An active login OTP still exists. Please use the OTP or wait until it expires.');
     }
@@ -114,49 +113,49 @@ export class AuthService {
 
     this.logger.log(`User logged in: ${user.email}`);
 
-    return ApiResponse.success('Login Successfull',
-      new AuthResponseDto({ 
-      accessToken,
-      user: userResponse,})
+    return ApiResponse.success(
+      'Login Successfull',
+      new AuthResponseDto({
+        accessToken,
+        user: userResponse,
+      }),
     );
-  
   }
 
   /**
    * Initiate password reset process - send OTP
    * @param forgotPasswordDto - Email address
-   * @returns User response DTO with userId
+   * @returns Success response without user data
    */
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<UserResponseDto>> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<null>> {
     const user = await this.userService.findByEmail(forgotPasswordDto.email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(user.id, OtpPurpose.FORGOT_PASSWORD);
+    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.FORGOT_PASSWORD);
     await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
 
     this.logger.log(`Forgot password OTP sent to user: ${user.email}`);
 
-    // Return user with userId
-    return ApiResponse.success('Otp Sent Successfully.',new UserResponseDto({id:user.id, email: user.email }));
+    return ApiResponse.success('Otp Sent Successfully.', null);
   }
 
   /**
    * Reset password using OTP verification
-   * @param resetPasswordDto - User ID and new password
+   * @param resetPasswordDto - User email and new password
    */
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
     // Find user
-    const user = await this.userService.findByIdEntity(resetPasswordDto.userId);
+    const user = await this.userService.findByEmail(resetPasswordDto.userEmail);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Check if a FORGOT_PASSWORD OTP still exists for this user (same as login check)
     const existingForgotPasswordOtp = await this.otpService.findActiveOtp(
-      resetPasswordDto.userId,
+      resetPasswordDto.userEmail,
       OtpPurpose.FORGOT_PASSWORD,
     );
     if (existingForgotPasswordOtp) {
@@ -164,17 +163,17 @@ export class AuthService {
     }
 
     // Update password
-    await this.userService.updatePassword(resetPasswordDto.userId, resetPasswordDto.newPassword);
+    await this.userService.updatePassword(user.id, resetPasswordDto.newPassword);
 
-    this.logger.log(`Password reset successful for user: ${resetPasswordDto.userId}`);
+    this.logger.log(`Password reset successful for user: ${resetPasswordDto.userEmail}`);
   }
 
   /**
    * Step 1: Initiate signup - create user without password, send OTP
    * @param signupInitiateDto - Signup initiation data (email, name, referralCode)
-   * @returns Created user response DTO
+   * @returns Success response without user data
    */
-  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
     // Check if email already exists
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
     if (existingUser) {
@@ -187,7 +186,7 @@ export class AuthService {
       this.logger.log(`Deleting unverified user with email: ${existingUser.email}`);
 
       // Delete OTPs associated with this user
-      await this.otpService.deleteAllOtpForUser(existingUser.id);
+      await this.otpService.deleteAllOtpForUser(existingUser.email);
 
       // Delete the unverified user
       await this.userRepository.delete(existingUser.id);
@@ -211,29 +210,29 @@ export class AuthService {
     const savedUser = await this.userRepository.save(user);
 
     // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(savedUser.id, OtpPurpose.SIGNUP);
+    const otpCode = await this.otpService.generateOtp(savedUser.email, OtpPurpose.SIGNUP);
     await this.emailService.sendVerificationEmail(savedUser.email, savedUser.fullName, otpCode);
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
-    return ApiResponse.success('OTP Sent Successfully. ', UserResponseDto.fromEntity(savedUser));
+    return ApiResponse.success('OTP Sent Successfully. ', null);
   }
 
   /**
    * Step 2: Verify OTP - common API for all OTP verification purposes
-   * @param verifyOtpDto - OTP verification data (userId, otp, purpose)
+   * @param verifyOtpDto - OTP verification data (userEmail, otp, purpose)
    * @returns Success message
    */
   async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<ApiResponse<null>> {
     // Verify user exists
-    const user = await this.userService.findByIdEntity(verifyOtpDto.userId);
+    const user = await this.userService.findByEmail(verifyOtpDto.userEmail);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Match OTP
     const { isMatched, message } = await this.otpService.matchOtp(
-      verifyOtpDto.userId,
+      verifyOtpDto.userEmail,
       verifyOtpDto.otp,
       verifyOtpDto.purpose,
     );
@@ -242,19 +241,19 @@ export class AuthService {
       throw new BadRequestException(message);
     }
 
-    this.logger.log(`OTP verified for user: ${verifyOtpDto.userId}, purpose: ${verifyOtpDto.purpose}`);
+    this.logger.log(`OTP verified for user: ${verifyOtpDto.userEmail}, purpose: ${verifyOtpDto.purpose}`);
 
     return ApiResponse.success(message, null);
   }
 
   /**
    * Step 3: Complete signup - set password, generate referral code, verify user
-   * @param completeSignupDto - Complete signup data (userId, password)
+   * @param completeSignupDto - Complete signup data (userEmail, password)
    * @returns Authentication response with token and user
    */
   async completeSignup(completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
     // Find user
-    const user = await this.userService.findByIdEntity(completeSignupDto.userId);
+    const user = await this.userService.findByEmail(completeSignupDto.userEmail);
     if (!user) {
       throw new NotFoundException('User not found');
     }

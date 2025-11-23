@@ -17,14 +17,14 @@ export class OtpService {
 
   /**
    * Generate a new OTP for a user
-   * @param userId - User ID
+   * @param userEmail - User email
    * @param purpose - Purpose of the OTP
    * @returns Generated OTP code
    */
-  async generateOtp(userId: number, purpose: OtpPurpose): Promise<string> {
+  async generateOtp(userEmail: string, purpose: OtpPurpose): Promise<string> {
     // Delete any existing OTPs for the same user and purpose
     await this.otpRepository.delete({
-      userId,
+      userEmail,
       purpose,
     });
 
@@ -38,7 +38,7 @@ export class OtpService {
     // Create and save OTP
     const otp = this.otpRepository.create({
       otp: otpCode,
-      userId,
+      userEmail,
       purpose,
       expiresAt,
     });
@@ -50,20 +50,20 @@ export class OtpService {
 
   /**
    * Match an OTP - if matched, delete and return true
-   * @param userId - User ID
+   * @param userEmail - User email
    * @param otpCode - OTP code to match
    * @param purpose - Purpose of the OTP
    * @returns True if OTP matches, false otherwise
    */
   async matchOtp(
-    userId: number,
+    userEmail: string,
     otpCode: string,
     purpose: OtpPurpose,
   ): Promise<{ isMatched: boolean; message: string }> {
     // Find the OTP
     const otp = await this.otpRepository.findOne({
       where: {
-        userId,
+        userEmail,
         otp: otpCode,
         purpose,
       },
@@ -99,19 +99,19 @@ export class OtpService {
 
   /**
    * Delete all OTPs for a user
-   * @param userId - User ID
+   * @param userEmail - User email
    */
-  async deleteAllOtpForUser(userId: number): Promise<void> {
-    await this.otpRepository.delete({ userId });
+  async deleteAllOtpForUser(userEmail: string): Promise<void> {
+    await this.otpRepository.delete({ userEmail });
   }
 
   /**
    * Find an active OTP for a user and purpose
-   * @param userId - User ID
+   * @param userEmail - User email
    * @param purpose - Purpose of the OTP
    * @returns OTP entity or null
    */
-  async findActiveOtp(userId: number, purpose: OtpPurpose): Promise<Otp | null> {
-    return this.otpRepository.findOne({ where: { userId, purpose, expiresAt: MoreThan(new Date()) } });
+  async findActiveOtp(userEmail: string, purpose: OtpPurpose): Promise<Otp | null> {
+    return this.otpRepository.findOne({ where: { userEmail, purpose, expiresAt: MoreThan(new Date()) } });
   }
 }
