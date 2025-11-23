@@ -1,5 +1,6 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res, Get, UseGuards, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UserService } from '../user/user.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
   LoginInitiateDto,
@@ -13,18 +14,19 @@ import {
 } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
-import { PassThrough } from 'stream';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
-import { UserResponseDto } from '../user/dto';
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   /**
    * Step 1: Initiate login - send OTP to email
@@ -130,7 +132,7 @@ export class AuthController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getMe(@CurrentUser() user: User): ApiResponse<{ user: UserResponseDto }> {
-    return this.authService.getMe(user);
+  getMe(@CurrentUser() user: User) {
+    return this.userService.getMe(user);
   }
 }

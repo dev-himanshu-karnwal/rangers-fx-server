@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { WalletModule } from './modules/wallets/wallet.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { EmailModule } from './core/services/email/email.module';
 
@@ -30,6 +31,7 @@ import { EmailModule } from './core/services/email/email.module';
     }),
     UserModule,
     AuthModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard],
