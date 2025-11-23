@@ -46,15 +46,18 @@ export class AuthController {
   @Post('login/complete')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async completeLogin(@Body() completeLoginDto: CompleteLoginDto,@Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
+  async completeLogin(
+    @Body() completeLoginDto: CompleteLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiResponse<AuthResponseDto>> {
     return this.authService.completeLogin(completeLoginDto, res);
   }
 
-  /** 
-   * Request Loggout 
+  /**
+   * Request Loggout
    */
   @Post('logout')
-  logout(@Res({passthrough: true}) res: Response):ApiResponse<null>{
+  logout(@Res({ passthrough: true }) res: Response): ApiResponse<null> {
     return this.authService.logout(res);
   }
 
@@ -114,8 +117,11 @@ export class AuthController {
   @Post('signup/complete')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async completeSignup(@Body() completeSignupDto: CompleteSignupDto, @Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
-    return this.authService.completeSignup(completeSignupDto,res);
+  async completeSignup(
+    @Body() completeSignupDto: CompleteSignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiResponse<AuthResponseDto>> {
+    return this.authService.completeSignup(completeSignupDto, res);
   }
 
   /**
@@ -127,5 +133,4 @@ export class AuthController {
   getMe(@CurrentUser() user: User): ApiResponse<{ user: UserResponseDto }> {
     return this.authService.getMe(user);
   }
-
 }

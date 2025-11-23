@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UpdateUserDto, UserResponseDto } from './dto';
 import { USER_CONSTANTS } from './constants/user.constants';
+import { ApiResponse } from 'src/common/response/api.response';
 
 /**
  * User service handling business logic for user operations
@@ -79,6 +80,23 @@ export class UserService {
    */
   async findByResetToken(token: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { resetPasswordToken: token } });
+  }
+
+  /**
+   * Find all direct children (referrals) of a user by their user ID.
+   * This returns all users whose `referredByUserId` matches the given ID,
+   * meaning they were referred directly by that user.
+   * @param id - The ID of the parent/referrer user.
+   * @returns A list of User entities or null if no referrals exist.
+   */
+  async findDirectChildrenOfUserById(id: number): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
+    const directChildren = await this.userRepository.find({ where: { referredByUserId: id } });
+    if (directChildren.length === 0) {
+      throw new NotFoundException(`Direct Children not found for ${id} User Id`);
+    }
+    return ApiResponse.success('Direct Children fetched Successfully.', {
+      users: directChildren.map((user) => UserResponseDto.fromEntity(user)),
+    });
   }
 
   /**

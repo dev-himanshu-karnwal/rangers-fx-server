@@ -1,7 +1,20 @@
-import { Controller, Get, Patch, Body, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Post,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto, UserResponseDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { User } from './entities';
+import { ApiResponse } from 'src/common/response/api.response';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -31,6 +44,18 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async findOneByReferralCode(@Param('referralCode') referralCode: string): Promise<UserResponseDto> {
     return this.userService.findOneByReferralCode(referralCode);
+  }
+
+  /**
+   * Get User direct-children
+   * @param UserId -  User ID
+   * @returns List of user
+   */
+  @Get(':id/direct-children')
+  async getDirectChildernOfUserbyId(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
+    return this.userService.findDirectChildrenOfUserById(id);
   }
 
   /**
