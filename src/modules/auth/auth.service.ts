@@ -33,6 +33,7 @@ import { USER_CONSTANTS } from '../user/constants/user.constants';
 import { ApiResponse } from 'src/common/response/api.response';
 import { UserResponseDto } from '../user/dto';
 import type { Response } from 'express';
+import { promises } from 'dns';
 
 /**
  * Auth service handling authentication and authorization logic
@@ -85,6 +86,19 @@ export class AuthService {
     this.logger.log(`Login OTP sent to user: ${user.email}`);
 
     return ApiResponse.success('OTP Sent Successfully.', null);
+  }
+
+  /**
+   * Logut service
+   */
+  logout(res: Response): ApiResponse<null>{
+    res.clearCookie(this.configService.authTokenCookieKey, {
+      httpOnly: true,
+      secure: this.configService.isProduction,
+      sameSite: this.configService.isProduction ? 'strict' : 'lax',
+      path: '/', // must match exactly
+    });
+    return  ApiResponse.success("Logout Successfully.");
   }
 
   /**
@@ -351,8 +365,8 @@ export class AuthService {
     return user;
   }
 
-  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
-    return ApiResponse.success('User profile fetched successfully', { user: UserResponseDto.fromEntity(user) });
+  getMe(user: User): ApiResponse<{ user: UserResponseDto }> {
+   return ApiResponse.success('User profile fetched successfully', { user: UserResponseDto.fromEntity(user) });
   }
 
   /**
