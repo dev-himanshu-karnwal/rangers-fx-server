@@ -82,7 +82,7 @@ export class User {
   workRole: WorkRole;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'business_done' })
-  businessDone: string;
+  businessDone: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

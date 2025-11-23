@@ -4,6 +4,7 @@ import { MoreThan, Repository } from 'typeorm';
 import { Otp } from './entities/otp.entity';
 import { OtpPurpose } from './enums/otp.enum';
 import { OTP_CONSTANTS } from './constants/otp.constants';
+import { ConfigService } from '../../config/config.service';
 
 /**
  * OTP service - simple OTP generation and matching
@@ -13,6 +14,7 @@ export class OtpService {
   constructor(
     @InjectRepository(Otp)
     private readonly otpRepository: Repository<Otp>,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -29,7 +31,7 @@ export class OtpService {
     });
 
     // Generate new OTP
-    const otpCode = this.generateRandomOtp();
+    const otpCode = this.configService.isProduction ? this.generateRandomOtp() : '123456';
 
     // Calculate expiry time
     const expiresAt = new Date();

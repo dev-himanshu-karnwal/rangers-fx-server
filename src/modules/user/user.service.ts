@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UpdateUserDto, UserResponseDto } from './dto';
@@ -50,8 +50,8 @@ export class UserService {
    * @param email - User email
    * @returns User entity or null
    */
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+  async findByEmail(email: string, options?: FindOneOptions<User>): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email }, ...options });
   }
 
   /**

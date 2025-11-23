@@ -13,4 +13,3 @@ export const AUTH_CONSTANTS = {
    */
   RESET_TOKEN_EXPIRATION_HOURS: 1,
 } as const;
-

@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { ReferralService } from '../user/services/referral.service';
+import { UserClosureService } from '../user/closure/closure.service';
 import { User } from '../user/entities/user.entity';
 import { EmailService } from '../../core/services/email/email.service';
 import { ConfigService } from '../../config/config.service';
@@ -42,6 +43,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly referralService: ReferralService,
+    private readonly userClosureService: UserClosureService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
@@ -74,7 +76,9 @@ export class AuthService {
 
     // Generate and send OTP
     const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.LOGIN);
-    await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+    if (this.configService.isProduction) {
+      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+    }
 
     this.logger.log(`Login OTP sent to user: ${user.email}`);
 
@@ -135,7 +139,9 @@ export class AuthService {
 
     // Generate and send OTP
     const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.FORGOT_PASSWORD);
-    await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+    if (this.configService.isProduction) {
+      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+    }
 
     this.logger.log(`Forgot password OTP sent to user: ${user.email}`);
 
@@ -211,7 +217,10 @@ export class AuthService {
 
     // Generate and send OTP
     const otpCode = await this.otpService.generateOtp(savedUser.email, OtpPurpose.SIGNUP);
-    await this.emailService.sendVerificationEmail(savedUser.email, savedUser.fullName, otpCode);
+
+    if (this.configService.isProduction) {
+      await this.emailService.sendVerificationEmail(savedUser.email, savedUser.fullName, otpCode);
+    }
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
@@ -253,7 +262,7 @@ export class AuthService {
    */
   async completeSignup(completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
     // Find user
-    const user = await this.userService.findByEmail(completeSignupDto.userEmail);
+    const user = await this.userService.findByEmail(completeSignupDto.userEmail, { relations: ['referredBy'] });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -267,6 +276,9 @@ export class AuthService {
     // Note: We're setting isVerified to true here, but ideally it should be set after OTP verification
     // For now, we'll set it here as per requirements
 
+    // Preserve referredByUserId before any modifications
+    const referredByUserId = user.referredByUserId;
+
     // Generate unique referral code
     const referralCode = await this.referralService.generateUniqueReferralCode();
 
@@ -278,8 +290,27 @@ export class AuthService {
     user.passwordUpdatedAt = new Date();
     user.referralCode = referralCode;
     user.isVerified = true;
+    user.referredByUserId = referredByUserId;
 
     const updatedUser = await this.userRepository.save(user);
+
+    // Create closure table entries for the new user
+    // This creates the self-row (depth=0) and all ancestor rows if parent exists
+    try {
+      const businessAmount = updatedUser.businessDone ? updatedUser.businessDone : null;
+      await this.userClosureService.createClosuresForUser(updatedUser.id, updatedUser.referredByUserId, businessAmount);
+      this.logger.log(`Closure entries created for user: ${updatedUser.email}`);
+    } catch (error) {
+      // Log error but don't fail signup - closure entries are important but shouldn't block user registration
+      this.logger.error(
+        `Failed to create closure entries for user ${updatedUser.email}: ${error.message}`,
+        error.stack,
+      );
+      // Re-throw if it's a critical error that should block signup
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+    }
 
     // Generate JWT token
     const accessToken = this.generateToken(updatedUser);
