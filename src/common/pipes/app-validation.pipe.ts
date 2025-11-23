@@ -49,7 +49,7 @@ export class AppValidationPipe extends ValidationPipe {
       },
 
       // Custom exception factory - always use our custom one
-      exceptionFactory: (errors: ValidationError[]) => {
+      exceptionFactory: (errors: ValidationError[] ) => {
         const formattedErrors = formatErrors(errors);
         // Log validation errors for debugging
         console.log('Validation failed:', formattedErrors);

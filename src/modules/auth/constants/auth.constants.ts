@@ -11,6 +11,6 @@ export const AUTH_CONSTANTS = {
   /**
    * Password reset token expiration time in hours
    */
-  RESET_TOKEN_EXPIRATION_HOURS: 1,
+  RESET_TOKEN_EXPIRATION_HOURS: 1,  
 } as const;
 

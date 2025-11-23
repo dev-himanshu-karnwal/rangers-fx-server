@@ -80,4 +80,8 @@ export class ConfigService {
   get jwtExpiresIn(): string {
     return this.configService.get<string>('JWT_EXPIRES_IN', '2d');
   }
+
+  get authTokenCookieKey(): string {
+    return this.configService.get<string>('AUTH_TOKEN_COOKIE_KEY', 'access_token');
+  }
 }

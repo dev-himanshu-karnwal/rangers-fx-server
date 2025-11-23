@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Patch } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
@@ -13,7 +13,7 @@ import {
 } from './dto';
 import { UserResponseDto } from '../user/dto';
 import { ApiResponse } from 'src/common/response/api.response';
-
+import type { Response } from 'express';
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
@@ -42,8 +42,8 @@ export class AuthController {
   @Post('login/complete')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async completeLogin(@Body() completeLoginDto: CompleteLoginDto): Promise<ApiResponse<AuthResponseDto>> {
-    return this.authService.completeLogin(completeLoginDto);
+  async completeLogin(@Body() completeLoginDto: CompleteLoginDto,@Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
+    return this.authService.completeLogin(completeLoginDto, res);
   }
 
   /**
@@ -102,7 +102,7 @@ export class AuthController {
   @Post('signup/complete')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async completeSignup(@Body() completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
-    return this.authService.completeSignup(completeSignupDto);
+  async completeSignup(@Body() completeSignupDto: CompleteSignupDto, @Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
+    return this.authService.completeSignup(completeSignupDto,res);
   }
 }

@@ -31,7 +31,8 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
 import { ApiResponse } from 'src/common/response/api.response';
-
+import type { Response  } from 'express';
+import { AUTH_CONSTANTS } from './constants';
 /**
  * Auth service handling authentication and authorization logic
  * Follows Single Responsibility Principle - handles auth-related business logic only
@@ -87,7 +88,7 @@ export class AuthService {
    * @param completeLoginDto - Complete login data (email, password)
    * @returns Authentication response with token and user
    */
-  async completeLogin(completeLoginDto: CompleteLoginDto): Promise<ApiResponse<AuthResponseDto>> {
+  async completeLogin(completeLoginDto: CompleteLoginDto, res: Response): Promise<ApiResponse<AuthResponseDto>> {
     // Find user by email with password
     const user = await this.userService.findByEmailWithPassword(completeLoginDto.email);
     if (!user || !user.passwordHash) {
@@ -108,6 +109,9 @@ export class AuthService {
 
     // Generate JWT token
     const accessToken = this.generateToken(user);
+    
+    // Storing jwt in cookie
+    this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
 
     // Get user DTO for response
     const userResponse = await this.userService.findOne(user.id);
@@ -252,7 +256,7 @@ export class AuthService {
    * @param completeSignupDto - Complete signup data (userId, password)
    * @returns Authentication response with token and user
    */
-  async completeSignup(completeSignupDto: CompleteSignupDto): Promise<ApiResponse<AuthResponseDto>> {
+  async completeSignup(completeSignupDto: CompleteSignupDto, res: Response): Promise<ApiResponse<AuthResponseDto>> {
     // Find user
     const user = await this.userService.findByIdEntity(completeSignupDto.userId);
     if (!user) {
@@ -285,6 +289,9 @@ export class AuthService {
     // Generate JWT token
     const accessToken = this.generateToken(updatedUser);
 
+    // Storing jwt in cookie
+    this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
+    
     // Get user DTO for response
     const userResponse = await this.userService.findOne(updatedUser.id);
 
@@ -326,5 +333,14 @@ export class AuthService {
     return this.jwtService.sign(payload, {
       expiresIn,
     } as any);
+  }
+  
+  private storeValueInCookie(res: Response, key:string, value:string): void{
+     //Storing token in cookie
+    res.cookie(key, value, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict'
+    })
   }
 }
