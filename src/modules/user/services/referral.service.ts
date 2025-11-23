@@ -33,7 +33,6 @@ export class ReferralService {
    * @throws BadRequestException if referral code is invalid
    */
   async validateReferralCode(referralCode: string): Promise<User> {
-    console.log("Call is made ! ")
     const referrer = await this.findUserByReferralCode(referralCode);
     if (!referrer) {
       throw new BadRequestException('Invalid referral code');

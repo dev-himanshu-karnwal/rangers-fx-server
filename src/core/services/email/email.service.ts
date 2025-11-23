@@ -83,22 +83,6 @@ export class EmailService {
   }
 
   /**
-   * Send password reset email
-   * @param email - User email address
-   * @param name - User full name
-   * @param resetToken - Password reset token
-   */
-  async sendPasswordResetEmail(email: string, name: string, resetToken: string): Promise<void> {
-    const resetUrl = `${this.configService.appUrl}/auth/reset-password?token=${resetToken}`;
-    const html = this.emailTemplateService.getPasswordResetTemplate(name, resetUrl);
-    await this.sendEmail({
-      to: email,
-      subject: 'Reset Your Password - Rangers FX',
-      html,
-    });
-  }
-
-  /**
    * Send email verification OTP
    * @param email - User email address
    * @param name - User full name

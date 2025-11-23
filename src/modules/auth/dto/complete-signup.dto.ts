@@ -1,17 +1,14 @@
-import { IsDefined, IsNotEmpty, IsString, IsInt, Min, MinLength } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsDefined, IsNotEmpty, IsEmail, IsString, MinLength } from 'class-validator';
 
 /**
  * DTO for completing user signup (Step 3)
- * User provides password to complete the signup process
+ * User provides email and password to complete the signup process
  */
 export class CompleteSignupDto {
   @IsDefined()
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  userId: number;
+  @IsEmail()
+  userEmail: string;
 
   @IsDefined()
   @IsNotEmpty()

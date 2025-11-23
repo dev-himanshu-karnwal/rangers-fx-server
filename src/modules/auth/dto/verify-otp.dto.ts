@@ -1,5 +1,4 @@
-import { IsDefined, IsNotEmpty, IsInt, IsString, IsEnum, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsDefined, IsNotEmpty, IsEmail, IsString, IsEnum } from 'class-validator';
 import { OtpPurpose } from '../../otp/enums/otp.enum';
 
 /**
@@ -9,10 +8,8 @@ import { OtpPurpose } from '../../otp/enums/otp.enum';
 export class VerifyOtpDto {
   @IsDefined()
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  userId: number;
+  @IsEmail()
+  userEmail: string;
 
   @IsDefined()
   @IsNotEmpty()

@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserModule } from '../user/user.module';
 import { OtpModule } from '../otp/otp.module';
+import { ClosureModule } from '../user/closure/closure.module';
 import { User } from '../user/entities/user.entity';
 import { ConfigModule } from '../../config/config.module';
 import { ConfigService } from '../../config/config.service';
@@ -22,6 +23,7 @@ import { AUTH_CONSTANTS } from './constants/auth.constants';
   imports: [
     UserModule, // Import UserModule to access UserService and ReferralService
     OtpModule, // Import OtpModule to access OtpService
+    ClosureModule, // Import ClosureModule to access UserClosureService
     TypeOrmModule.forFeature([User]), // Import User entity for direct repository access
     ConfigModule, // Import ConfigModule to access ConfigService
     EmailModule, // Import EmailModule to access EmailService

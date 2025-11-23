@@ -1,15 +1,5 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { OtpPurpose } from '../enums/otp.enum';
-import { User } from '../../user/entities/user.entity';
 
 /**
  * OTP entity representing a one-time password in the system.
@@ -27,13 +17,9 @@ export class Otp {
   @Index()
   expiresAt: Date;
 
-  @Column({ type: 'int', name: 'user_id' })
+  @Column({ type: 'varchar', length: 255, name: 'user_email' })
   @Index()
-  userId: number;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  userEmail: string;
 
   @Column({
     type: 'enum',

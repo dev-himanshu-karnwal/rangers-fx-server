@@ -52,7 +52,6 @@ export class AppValidationPipe extends ValidationPipe {
       exceptionFactory: (errors: ValidationError[] ) => {
         const formattedErrors = formatErrors(errors);
         // Log validation errors for debugging
-        console.log('Validation failed:', formattedErrors);
         return new BadRequestException({
           status: ApiStatus.ERROR,
           message: 'Data Validation Failed',

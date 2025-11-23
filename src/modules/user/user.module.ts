@@ -4,6 +4,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ReferralService } from './services/referral.service';
 import { User } from './entities/user.entity';
+// import { ClosureModule } from './closure/closure.module';
 
 /**
  * User module - handles user-related operations
