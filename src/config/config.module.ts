@@ -7,7 +7,7 @@ import { ConfigService } from './config.service';
     NestConfigModule.forRoot({
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
       isGlobal: true,
-      cache: true,
+      cache: false,
     }),
   ],
   providers: [ConfigService],

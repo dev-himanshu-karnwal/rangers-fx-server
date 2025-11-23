@@ -4,13 +4,22 @@ import { ConfigService } from './config/config.service';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
 import { AppValidationPipe } from './common/pipes/app-validation.pipe';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Enable CORS
-  app.enableCors();
+  // Enable cookie parser middleware
+  app.use(cookieParser());
+
+  // Enable CORS with credentials support for cookies
+  app.enableCors({
+    origin: configService.appUrl || true, // Allow requests from app URL or all origins in dev
+    credentials: true, // Required for cookies to work with CORS
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   // Global exception filter for consistent error responses
   app.useGlobalFilters(new ApiExceptionFilter());

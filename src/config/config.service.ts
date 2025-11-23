@@ -84,4 +84,16 @@ export class ConfigService {
   get authTokenCookieKey(): string {
     return this.configService.get<string>('AUTH_TOKEN_COOKIE_KEY', 'access_token');
   }
+
+  get cookieMaxAge(): number {
+    const maxAge = this.configService.get<string>('COOKIE_MAX_AGE');
+    if (maxAge) {
+      const parsed = Number(maxAge);
+      if (!isNaN(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+    // Default: 2 days in milliseconds
+    return 172800000;
+  }
 }

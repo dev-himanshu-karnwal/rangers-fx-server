@@ -372,11 +372,12 @@ export class AuthService {
   }
 
   private storeValueInCookie(res: Response, key: string, value: string): void {
-    //Storing token in cookie
     res.cookie(key, value, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: this.configService.isProduction, // Only secure in production (HTTPS required)
+      sameSite: this.configService.isProduction ? 'strict' : 'lax', // More flexible in development
+      maxAge: this.configService.cookieMaxAge,
+      path: '/', // Ensure cookie is available for all paths
     });
   }
 }
