@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEmail, IsEnum, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsEnum, MinLength, IsBoolean } from 'class-validator';
 import { UserRole, WorkRole, UserStatus } from '../enums/user.enum';
 
 /**
@@ -29,4 +29,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  hasChildren?: boolean | null;
 }

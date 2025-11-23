@@ -96,7 +96,7 @@ export class AuthController {
   @Post('signup/initiate')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
     return this.authService.signupInitiate(signupInitiateDto);
   }
 

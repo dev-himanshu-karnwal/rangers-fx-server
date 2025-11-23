@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -15,7 +15,7 @@ import { WalletModule } from '../wallets/wallet.module';
   imports: [
     TypeOrmModule.forFeature([User]),
     ClosureModule, // Import ClosureModule to access UserClosureService
-    WalletModule, // Import WalletModule to access WalletService
+    forwardRef(() => WalletModule), // Import WalletModule to access WalletService
   ],
   controllers: [UserController],
   providers: [UserService, ReferralService],

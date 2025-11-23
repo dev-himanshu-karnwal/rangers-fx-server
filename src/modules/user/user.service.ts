@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, Repository } from 'typeorm';
+import { Equal, FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UpdateUserDto, UserResponseDto } from './dto';
@@ -86,8 +86,15 @@ export class UserService {
    * @returns User Entity or null
    */
   async findUserByReferredByUserId(referredByUserId: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { referredByUserId } });
+    if (!referredByUserId) {
+      return null;
+    }
+    const user = await this.userRepository.findOne({
+      where: { id: Equal(referredByUserId) },
+    });
+    return user;
   }
+
   /**
    * Find user by reset password token
    * @param token - Reset password token

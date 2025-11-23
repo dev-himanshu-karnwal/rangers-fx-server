@@ -55,7 +55,7 @@ export class UserController {
   async getDirectChildernOfUserbyId(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
-    return this.userService.findDirectChildrenOfUserById(id);
+    return await this.userService.findDirectChildrenOfUserById(id);
   }
 
   /**

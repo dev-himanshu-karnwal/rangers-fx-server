@@ -182,7 +182,7 @@ export class AuthService {
    * @param signupInitiateDto - Signup initiation data (email, name, referralCode)
    * @returns Success response without user data
    */
-  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
+  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
     // Delete OTPs for existing unverified user (if any) before creating new user
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
     if (existingUser && existingUser.status === UserStatus.UNVERIFIED) {
@@ -205,7 +205,7 @@ export class AuthService {
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
-    return ApiResponse.success('OTP Sent Successfully. ', new UserResponseDto(savedUser));
+    return ApiResponse.success('OTP Sent Successfully.');
   }
 
   /**
@@ -261,13 +261,17 @@ export class AuthService {
     const userResponse = await this.userService.findOne(updatedUser.id);
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
 
-    //Updating Parent Of current User
-    const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId!);
-    if (!existingParent) {
-      throw new NotFoundException("User doesn't exist with referredByUserId for Current User SignUp.");
+    //Updating parent
+    if (userResponse.referredByUserId) {
+      const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId);
+      if (existingParent) {
+        const updateUserDto = new UserResponseDto({
+          ...existingParent,
+          hasChildren: true,
+        });
+        await this.userService.update(existingParent.id, updateUserDto);
+      }
     }
-    existingParent.hasChildren = true;
-    await this.userService.update(existingParent.id, existingParent);
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 
