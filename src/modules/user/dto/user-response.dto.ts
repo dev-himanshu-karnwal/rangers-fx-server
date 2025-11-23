@@ -38,7 +38,7 @@ export class UserResponseDto {
   workRole: WorkRole;
 
   @Expose()
-  businessDone: string;
+  businessDone: number | null;
 
   @Expose()
   createdAt: Date;

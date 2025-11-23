@@ -31,8 +31,9 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { USER_CONSTANTS } from '../user/constants/user.constants';
 import { ApiResponse } from 'src/common/response/api.response';
-import type { Response  } from 'express';
-import { AUTH_CONSTANTS } from './constants';
+import { UserResponseDto } from '../user/dto';
+import type { Response } from 'express';
+
 /**
  * Auth service handling authentication and authorization logic
  * Follows Single Responsibility Principle - handles auth-related business logic only
@@ -112,7 +113,7 @@ export class AuthService {
 
     // Generate JWT token
     const accessToken = this.generateToken(user);
-    
+
     // Storing jwt in cookie
     this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
 
@@ -321,7 +322,7 @@ export class AuthService {
 
     // Storing jwt in cookie
     this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
-    
+
     // Get user DTO for response
     const userResponse = await this.userService.findOne(updatedUser.id);
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, referralCode);
@@ -350,6 +351,10 @@ export class AuthService {
     return user;
   }
 
+  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return ApiResponse.success('User profile fetched successfully', { user: UserResponseDto.fromEntity(user) });
+  }
+
   /**
    * Generate JWT token for user
    * @param user - User entity
@@ -365,13 +370,13 @@ export class AuthService {
       expiresIn,
     } as any);
   }
-  
-  private storeValueInCookie(res: Response, key:string, value:string): void{
-     //Storing token in cookie
+
+  private storeValueInCookie(res: Response, key: string, value: string): void {
+    //Storing token in cookie
     res.cookie(key, value, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict'
-    })
+      sameSite: 'strict',
+    });
   }
 }

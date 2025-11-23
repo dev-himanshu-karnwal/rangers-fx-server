@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Get, UseGuards, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
@@ -12,7 +12,12 @@ import {
   CompleteSignupDto,
 } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { User } from '../user/entities';
+import { UserResponseDto } from '../user/dto';
 import type { Response } from 'express';
+
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
@@ -41,7 +46,10 @@ export class AuthController {
   @Post('login/complete')
   @Public()
   @HttpCode(HttpStatus.OK)
-  async completeLogin(@Body() completeLoginDto: CompleteLoginDto,@Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
+  async completeLogin(
+    @Body() completeLoginDto: CompleteLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiResponse<AuthResponseDto>> {
     return this.authService.completeLogin(completeLoginDto, res);
   }
 
@@ -101,7 +109,20 @@ export class AuthController {
   @Post('signup/complete')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async completeSignup(@Body() completeSignupDto: CompleteSignupDto, @Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
-    return this.authService.completeSignup(completeSignupDto,res);
+  async completeSignup(
+    @Body() completeSignupDto: CompleteSignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiResponse<AuthResponseDto>> {
+    return this.authService.completeSignup(completeSignupDto, res);
+  }
+
+  /**
+   * Get authenticated user's profile (me)
+   * @returns Authentication response with current user info
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@CurrentUser() user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.authService.getMe(user);
   }
 }
