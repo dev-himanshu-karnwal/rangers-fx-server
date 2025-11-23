@@ -1,18 +1,7 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
-import { ReferralService } from '../user/services/referral.service';
-import { UserClosureService } from '../user/closure/closure.service';
 import { User } from '../user/entities/user.entity';
 import { EmailService } from '../../core/services/email/email.service';
 import { ConfigService } from '../../config/config.service';
@@ -29,11 +18,8 @@ import {
 } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
-import { USER_CONSTANTS } from '../user/constants/user.constants';
 import { ApiResponse } from 'src/common/response/api.response';
-import { UserResponseDto } from '../user/dto';
 import type { Response } from 'express';
-import { promises } from 'dns';
 
 /**
  * Auth service handling authentication and authorization logic
@@ -45,14 +31,10 @@ export class AuthService {
 
   constructor(
     private readonly userService: UserService,
-    private readonly referralService: ReferralService,
-    private readonly userClosureService: UserClosureService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
   ) {}
 
   /**
@@ -91,14 +73,14 @@ export class AuthService {
   /**
    * Logut service
    */
-  logout(res: Response): ApiResponse<null>{
+  logout(res: Response): ApiResponse<null> {
     res.clearCookie(this.configService.authTokenCookieKey, {
       httpOnly: true,
       secure: this.configService.isProduction,
       sameSite: this.configService.isProduction ? 'strict' : 'lax',
       path: '/', // must match exactly
     });
-    return  ApiResponse.success("Logout Successfully.");
+    return ApiResponse.success('Logout Successfully.');
   }
 
   /**
@@ -199,40 +181,18 @@ export class AuthService {
    * @returns Success response without user data
    */
   async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
-    // Check if email already exists
+    // Delete OTPs for existing unverified user (if any) before creating new user
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
-    if (existingUser) {
-      // If user is verified, throw error
-      if (existingUser.isVerified) {
-        throw new ConflictException('Email already exists');
-      }
-
-      // If user is not verified, delete the old entry and related OTPs
-      this.logger.log(`Deleting unverified user with email: ${existingUser.email}`);
-
-      // Delete OTPs associated with this user
+    if (existingUser && !existingUser.isVerified) {
       await this.otpService.deleteAllOtpForUser(existingUser.email);
-
-      // Delete the unverified user
-      await this.userRepository.delete(existingUser.id);
-
-      this.logger.log(`Deleted unverified user: ${existingUser.id}`);
     }
 
-    // Find referrer if referral code provided
-    const referrer: User | null = await this.userService.findByIdEntity(signupInitiateDto.referredByUserId);
-    if (!referrer) {
-      throw new NotFoundException('Referrer not found');
-    }
-
-    // Create user entity without password
-    const user = this.userRepository.create({
-      fullName: signupInitiateDto.fullName,
-      email: signupInitiateDto.email,
-      referredByUserId: referrer.id,
-    });
-
-    const savedUser = await this.userRepository.save(user);
+    // Create unverified user (UserService handles validation and cleanup)
+    const savedUser = await this.userService.createUnverifiedUser(
+      signupInitiateDto.email,
+      signupInitiateDto.fullName,
+      signupInitiateDto.referredByUserId,
+    );
 
     // Generate and send OTP
     const otpCode = await this.otpService.generateOtp(savedUser.email, OtpPurpose.SIGNUP);
@@ -269,6 +229,9 @@ export class AuthService {
       throw new BadRequestException(message);
     }
 
+    // Mark user as verified
+    await this.userService.verifyUser(verifyOtpDto.userEmail);
+
     this.logger.log(`OTP verified for user: ${verifyOtpDto.userEmail}, purpose: ${verifyOtpDto.purpose}`);
 
     return ApiResponse.success(message, null);
@@ -280,56 +243,11 @@ export class AuthService {
    * @returns Authentication response with token and user
    */
   async completeSignup(completeSignupDto: CompleteSignupDto, res: Response): Promise<ApiResponse<AuthResponseDto>> {
-    // Find user
-    const user = await this.userService.findByEmail(completeSignupDto.userEmail, { relations: ['referredBy'] });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check if user already has a password (already completed signup)
-    if (user.passwordHash) {
-      throw new BadRequestException('User signup already completed');
-    }
-
-    // Check if user is verified (should be verified via OTP in step 2)
-    // Note: We're setting isVerified to true here, but ideally it should be set after OTP verification
-    // For now, we'll set it here as per requirements
-
-    // Preserve referredByUserId before any modifications
-    const referredByUserId = user.referredByUserId;
-
-    // Generate unique referral code
-    const referralCode = await this.referralService.generateUniqueReferralCode();
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(completeSignupDto.password, USER_CONSTANTS.SALT_ROUNDS);
-
-    // Update user with password, referral code, and verification status
-    user.passwordHash = passwordHash;
-    user.passwordUpdatedAt = new Date();
-    user.referralCode = referralCode;
-    user.isVerified = true;
-    user.referredByUserId = referredByUserId;
-
-    const updatedUser = await this.userRepository.save(user);
-
-    // Create closure table entries for the new user
-    // This creates the self-row (depth=0) and all ancestor rows if parent exists
-    try {
-      const businessAmount = updatedUser.businessDone ? updatedUser.businessDone : null;
-      await this.userClosureService.createClosuresForUser(updatedUser.id, updatedUser.referredByUserId, businessAmount);
-      this.logger.log(`Closure entries created for user: ${updatedUser.email}`);
-    } catch (error) {
-      // Log error but don't fail signup - closure entries are important but shouldn't block user registration
-      this.logger.error(
-        `Failed to create closure entries for user ${updatedUser.email}: ${error.message}`,
-        error.stack,
-      );
-      // Re-throw if it's a critical error that should block signup
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-    }
+    // Complete user signup (UserService handles password, referral code, wallet, closure)
+    const updatedUser = await this.userService.completeUserSignup(
+      completeSignupDto.userEmail,
+      completeSignupDto.password,
+    );
 
     // Generate JWT token
     const accessToken = this.generateToken(updatedUser);
@@ -339,7 +257,7 @@ export class AuthService {
 
     // Get user DTO for response
     const userResponse = await this.userService.findOne(updatedUser.id);
-    await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, referralCode);
+    await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 
@@ -363,10 +281,6 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
     return user;
-  }
-
-  getMe(user: User): ApiResponse<{ user: UserResponseDto }> {
-   return ApiResponse.success('User profile fetched successfully', { user: UserResponseDto.fromEntity(user) });
   }
 
   /**
