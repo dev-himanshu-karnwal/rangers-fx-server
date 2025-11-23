@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import {
@@ -14,6 +14,10 @@ import {
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
 import { PassThrough } from 'stream';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { User } from '../user/entities';
+import { UserResponseDto } from '../user/dto';
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
@@ -113,4 +117,15 @@ export class AuthController {
   async completeSignup(@Body() completeSignupDto: CompleteSignupDto, @Res({passthrough:true}) res: Response): Promise<ApiResponse<AuthResponseDto>> {
     return this.authService.completeSignup(completeSignupDto,res);
   }
+
+  /**
+   * Get authenticated user's profile (me)
+   * @returns Authentication response with current user info
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user: User): ApiResponse<{ user: UserResponseDto }> {
+    return this.authService.getMe(user);
+  }
+
 }
