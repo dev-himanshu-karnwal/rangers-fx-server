@@ -20,6 +20,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { OtpPurpose } from '../otp/enums/otp.enum';
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
+import { UserResponseDto } from '../user/dto';
 
 /**
  * Auth service handling authentication and authorization logic
@@ -180,7 +181,7 @@ export class AuthService {
    * @param signupInitiateDto - Signup initiation data (email, name, referralCode)
    * @returns Success response without user data
    */
-  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
+  async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     // Delete OTPs for existing unverified user (if any) before creating new user
     const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
     if (existingUser && !existingUser.isVerified) {
@@ -203,7 +204,7 @@ export class AuthService {
 
     this.logger.log(`Signup initiated for user: ${savedUser.email}`);
 
-    return ApiResponse.success('OTP Sent Successfully. ', null);
+    return ApiResponse.success('OTP Sent Successfully. ', new UserResponseDto(savedUser));
   }
 
   /**
@@ -258,6 +259,14 @@ export class AuthService {
     // Get user DTO for response
     const userResponse = await this.userService.findOne(updatedUser.id);
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
+
+    //Updating Parent Of current User
+    const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId!);
+    if (!existingParent) {
+      throw new NotFoundException("User doesn't exist with referredByUserId for Current User SignUp.");
+    }
+    existingParent.hasChildren = true;
+    await this.userService.update(existingParent.id, existingParent);
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
 

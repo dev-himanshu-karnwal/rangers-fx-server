@@ -32,6 +32,9 @@ export class UserResponseDto {
   isVerified: boolean;
 
   @Expose()
+  hasChildren: boolean | null;
+
+  @Expose()
   role: UserRole;
 
   @Expose()

@@ -80,6 +80,14 @@ export class UserService {
   }
 
   /**
+   * Find User by referredByUserId
+   * @param id - referredByUserId
+   * @returns User Entity or null
+   */
+  async findUserByReferredByUserId(referredByUserId: number): Promise<User | null> {
+    return this.userRepository.findOne({ where: { referredByUserId } });
+  }
+  /**
    * Find user by reset password token
    * @param token - Reset password token
    * @returns User entity or null

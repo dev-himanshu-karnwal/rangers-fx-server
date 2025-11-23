@@ -17,6 +17,7 @@ import type { Response } from 'express';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
+import { UserResponseDto } from '../user/dto';
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
@@ -95,7 +96,7 @@ export class AuthController {
   @Post('signup/initiate')
   @Public()
   @HttpCode(HttpStatus.CREATED)
-  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
+  async signupInitiate(@Body() signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<UserResponseDto>> {
     return this.authService.signupInitiate(signupInitiateDto);
   }
 
