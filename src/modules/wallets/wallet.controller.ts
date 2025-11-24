@@ -22,7 +22,7 @@ export class WalletController {
    */
   @Get('mine')
   async getUserWallet(@CurrentUser() user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    return await this.walletService.getUserWallet(user);
+    return await this.walletService.getUserWallet(user.id);
   }
 
   /**

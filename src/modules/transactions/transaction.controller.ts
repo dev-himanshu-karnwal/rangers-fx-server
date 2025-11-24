@@ -1,6 +1,11 @@
 import { Controller, Post, Body, Patch, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { AddCompanyTransactionDto, AddPersonalTransactionDto, TransactionResponseDto } from './dto';
+import {
+  AddCompanyTransactionDto,
+  AddPersonalTransactionDto,
+  TransactionResponseDto,
+  AddP2PTransactionDto,
+} from './dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -42,6 +47,20 @@ export class TransactionController {
     @CurrentUser() user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
     return this.transactionService.addPersonalTransaction(addPersonalTransactionDto, user);
+  }
+
+  /**
+   * Adds a new p2p transaction.
+   * @param addP2PTransactionDto - Data for the new p2p transaction
+   * @param user - The current authenticated user
+   * @returns ApiResponse containing the newly created p2p transaction
+   */
+  @Post('add-p2p')
+  async addP2PTransaction(
+    @Body() addP2PTransactionDto: AddP2PTransactionDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    return this.transactionService.addP2PTransaction(addP2PTransactionDto, user);
   }
 
   /**

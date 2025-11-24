@@ -31,15 +31,14 @@ export class WalletService {
   }
 
   /**
-   * Fetch the wallet for the current authenticated user
-   * @param user - Current authenticated user (passed from controller)
+   * Fetch the wallet for the given user
+   * @param userId - User ID to fetch the wallet for
    * @returns ApiResponse containing the user's wallet DTO
    */
-  async getUserWallet(user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    const currentUser = this.userService.getMe(user);
-    const wallet = await this.walletRepository.findOne({ where: { userId: currentUser.data?.user.id } });
+  async getUserWallet(userId: number): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    const wallet = await this.walletRepository.findOne({ where: { userId } });
     if (!wallet) {
-      throw new NotFoundException('Current User wallet Not found.');
+      throw new NotFoundException(`User with ID ${userId} wallet not found.`);
     }
     return ApiResponse.success('Wallet fetched Successfully.', { wallet: new WalletResponseDto(wallet) });
   }
@@ -104,9 +103,18 @@ export class WalletService {
    * @returns Promise that resolves to the updated Wallet entity
    */
   async increasePersonalWalletBalance(amount: number, user: User): Promise<Wallet> {
-    const walletResponse = await this.getUserWallet(user);
+    const walletResponse = await this.getUserWallet(user.id);
     const wallet = walletResponse.data!.wallet;
     wallet.balance += amount;
+    return await this.walletRepository.save(wallet);
+  }
+
+  /**
+   * Updates the wallet.
+   * @param wallet - The wallet to save
+   * @returns Promise that resolves to the updated Wallet entity
+   */
+  async saveWallet(wallet: Wallet): Promise<Wallet> {
     return await this.walletRepository.save(wallet);
   }
 }

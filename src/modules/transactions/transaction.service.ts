@@ -2,7 +2,12 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
-import { AddCompanyTransactionDto, AddPersonalTransactionDto, TransactionResponseDto } from './dto';
+import {
+  AddCompanyTransactionDto,
+  AddP2PTransactionDto,
+  AddPersonalTransactionDto,
+  TransactionResponseDto,
+} from './dto';
 import { TransactionStatus, TransactionType } from './enums/transaction.enum';
 import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
@@ -60,7 +65,7 @@ export class TransactionService {
     addPersonalTransactionDto: AddPersonalTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const userWalletResponse = await this.walletService.getUserWallet(user);
+    const userWalletResponse = await this.walletService.getUserWallet(user.id);
     const userWallet = userWalletResponse.data!.wallet;
 
     const companyInvestmentWalletResponse = await this.walletService.getCompanyInvestmentWallet();
@@ -80,6 +85,58 @@ export class TransactionService {
     const reloaded = await this.reloadTransactionWithRelations(saved);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal transaction added successfully', {
+      transaction: TransactionResponseDto.fromEntity(reloaded),
+    });
+  }
+
+  /**
+   * Creates and adds a p2p transaction to the specified user's wallet.
+   * @param addP2PTransactionDto - Payload for the new p2p transaction
+   * @param user - Authenticated user initiating the transaction
+   * @returns Success ApiResponse containing the created transaction
+   */
+  async addP2PTransaction(
+    addP2PTransactionDto: AddP2PTransactionDto,
+    user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    const userFromWalletResponse = await this.walletService.getUserWallet(user.id);
+    const userFromWallet = userFromWalletResponse.data!.wallet;
+
+    if (userFromWallet.balance < addP2PTransactionDto.amount) {
+      throw new BadRequestException('Insufficient balance in your wallet');
+    }
+
+    const userToWalletResponse = await this.walletService.getUserWallet(addP2PTransactionDto.toUserId);
+    const userToWallet = userToWalletResponse.data!.wallet;
+
+    if (!userToWallet) {
+      throw new NotFoundException('Recipient wallet not found');
+    }
+
+    userFromWallet.balance -= addP2PTransactionDto.amount;
+    await this.walletService.saveWallet(userFromWallet);
+
+    userToWallet.balance += addP2PTransactionDto.amount;
+    await this.walletService.saveWallet(userToWallet);
+
+    const newTransaction = this.transactionRepository.create({
+      amount: addP2PTransactionDto.amount,
+      description: addP2PTransactionDto.description,
+      type: TransactionType.P2P,
+      toWallet: userToWallet,
+      fromWallet: userFromWallet,
+      initiator: user,
+      entityId: userFromWallet.id,
+      status: TransactionStatus.APPROVED,
+      statusUpdatedAt: new Date(),
+      statusUpdatedBy: user.id,
+      statusUpdater: user,
+    });
+
+    const saved = await this.transactionRepository.save(newTransaction);
+    const reloaded = await this.reloadTransactionWithRelations(saved);
+
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>('P2P transaction added successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
     });
   }
