@@ -11,6 +11,7 @@ import { WalletModule } from './modules/wallets/wallet.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { EmailModule } from './core/services/email/email.module';
 import { TransactionModule } from './modules/transactions/transaction.module';
+import { BotsModule } from './modules/bots/bots.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { TransactionModule } from './modules/transactions/transaction.module';
     AuthModule,
     WalletModule,
     TransactionModule,
+    BotsModule,
   ],
   controllers: [AppController],
   providers: [

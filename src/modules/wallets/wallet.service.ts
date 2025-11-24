@@ -43,16 +43,26 @@ export class WalletService {
     return ApiResponse.success('Wallet fetched Successfully.', { wallet: new WalletResponseDto(wallet) });
   }
 
+  private async getCompanyWallet(
+    walletType: 'income' | 'investment',
+  ): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    const walletResponse = await this.walletRepository.findOne({
+      where: { walletType: walletType === 'income' ? WalletType.COMPANY_INCOME : WalletType.COMPANY_INVESTMENT },
+    });
+    if (!walletResponse) {
+      throw new NotFoundException(`${walletType} wallet not found.`);
+    }
+    return ApiResponse.success(`${walletType} fetched successfully.`, {
+      wallet: new WalletResponseDto(walletResponse),
+    });
+  }
+
   /**
    * Fetch the company's income wallet
    * @returns ApiResponse containing the company income wallet DTO
    */
   async getCompanyIncomeWallet(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    const wallet = await this.walletRepository.findOne({ where: { walletType: Equal(WalletType.COMPANY_INCOME) } });
-    if (!wallet) {
-      throw new NotFoundException('Company income wallet not found.');
-    }
-    return ApiResponse.success('Company income fetched successfully.', { wallet: new WalletResponseDto(wallet) });
+    return this.getCompanyWallet('income');
   }
 
   /**
@@ -60,11 +70,7 @@ export class WalletService {
    * @returns ApiResponse containing the company investment wallet DTO
    */
   async getCompanyInvestmentWallet(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    const wallet = await this.walletRepository.findOne({ where: { walletType: Equal(WalletType.COMPANY_INVESTMENT) } });
-    if (!wallet) {
-      throw new NotFoundException('Company investment wallet not found.');
-    }
-    return ApiResponse.success('Company investment fetched successfully.', { wallet: new WalletResponseDto(wallet) });
+    return this.getCompanyWallet('investment');
   }
 
   /**

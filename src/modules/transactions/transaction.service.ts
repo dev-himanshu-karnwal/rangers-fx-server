@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
 import {
   AddCompanyTransactionDto,
@@ -27,6 +27,17 @@ export class TransactionService {
     private readonly transactionRepository: Repository<Transaction>,
     private readonly walletService: WalletService,
   ) {}
+
+  /**
+   * Creates and saves a Transaction entity to the database.
+   * @param transactionData - Partial transaction payload used to create the entity
+   * @returns The saved and reloaded Transaction entity
+   */
+  async createTransaction(transactionData: DeepPartial<Transaction>): Promise<Transaction> {
+    const transaction = this.transactionRepository.create(transactionData);
+    const saved = await this.transactionRepository.save(transaction);
+    return this.reloadTransactionWithRelations(saved);
+  }
 
   /**
    * Fetches all transactions from the repository with related entities.
@@ -57,17 +68,17 @@ export class TransactionService {
     const companyWalletResponse = await this.walletService.getCompanyInvestmentWallet();
     const companyWallet = companyWalletResponse.data!.wallet;
 
-    const newTransaction = this.transactionRepository.create({
+    const newTransaction = await this.createTransaction({
       amount: addCompanyTransactionDto.amount,
-      description: addCompanyTransactionDto.description,
+      description:
+        addCompanyTransactionDto.description ?? `Add ${addCompanyTransactionDto.amount} to company investment wallet`,
       type: TransactionType.ADD_COMPANY,
       toWallet: companyWallet,
       initiator: user,
       entityId: companyWallet.id,
     });
 
-    const saved = await this.transactionRepository.save(newTransaction);
-    const reloaded = await this.reloadTransactionWithRelations(saved);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Company transaction added successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
@@ -91,17 +102,18 @@ export class TransactionService {
       throw new BadRequestException('Insufficient balance in company income wallet');
     }
 
-    const newTransaction = this.transactionRepository.create({
+    const newTransaction = await this.createTransaction({
       amount: withdrawCompanyTransactionDto.amount,
-      description: withdrawCompanyTransactionDto.description,
+      description:
+        withdrawCompanyTransactionDto.description ??
+        `Withdraw ${withdrawCompanyTransactionDto.amount} from company income wallet`,
       type: TransactionType.WITHDRAW_COMPANY,
       fromWallet: companyIncomeWallet,
       initiator: user,
       entityId: companyIncomeWallet.id,
     });
 
-    const saved = await this.transactionRepository.save(newTransaction);
-    const reloaded = await this.reloadTransactionWithRelations(saved);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Company withdrawal requested successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
@@ -125,17 +137,18 @@ export class TransactionService {
       throw new BadRequestException('Insufficient balance in your wallet');
     }
 
-    const newTransaction = this.transactionRepository.create({
+    const newTransaction = await this.createTransaction({
       amount: withdrawPersonalTransactionDto.amount,
-      description: withdrawPersonalTransactionDto.description,
+      description:
+        withdrawPersonalTransactionDto.description ??
+        `Withdraw ${withdrawPersonalTransactionDto.amount} from your personal wallet`,
       type: TransactionType.WITHDRAW_PERSONAL,
       fromWallet: userWallet,
       initiator: user,
       entityId: userWallet.id,
     });
 
-    const saved = await this.transactionRepository.save(newTransaction);
-    const reloaded = await this.reloadTransactionWithRelations(saved);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal withdrawal requested successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
@@ -158,9 +171,10 @@ export class TransactionService {
     const companyInvestmentWalletResponse = await this.walletService.getCompanyInvestmentWallet();
     const companyInvestmentWallet = companyInvestmentWalletResponse.data!.wallet;
 
-    const newTransaction = this.transactionRepository.create({
+    const newTransaction = await this.createTransaction({
       amount: addPersonalTransactionDto.amount,
-      description: addPersonalTransactionDto.description,
+      description:
+        addPersonalTransactionDto.description ?? `Add ${addPersonalTransactionDto.amount} to your personal wallet`,
       type: TransactionType.ADD_PERSONAL,
       toWallet: userWallet,
       fromWallet: companyInvestmentWallet,
@@ -168,8 +182,7 @@ export class TransactionService {
       entityId: userWallet.id,
     });
 
-    const saved = await this.transactionRepository.save(newTransaction);
-    const reloaded = await this.reloadTransactionWithRelations(saved);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal transaction added successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
@@ -200,14 +213,7 @@ export class TransactionService {
       throw new NotFoundException('Recipient wallet not found');
     }
 
-    const pendingTransactionsAmount = await this.transactionRepository.sum('amount', {
-      fromWalletId: userFromWallet.id,
-      status: TransactionStatus.PENDING,
-    });
-
-    if (pendingTransactionsAmount && pendingTransactionsAmount > userFromWallet.balance - addP2PTransactionDto.amount) {
-      throw new BadRequestException('Insufficient balance in your wallet. You have pending transactions.');
-    }
+    await this.ensureSufficientBalanceWithPendingTransactions(userFromWallet, addP2PTransactionDto.amount);
 
     userFromWallet.balance -= addP2PTransactionDto.amount;
     await this.walletService.saveWallet(userFromWallet);
@@ -215,9 +221,11 @@ export class TransactionService {
     userToWallet.balance += addP2PTransactionDto.amount;
     await this.walletService.saveWallet(userToWallet);
 
-    const newTransaction = this.transactionRepository.create({
+    const newTransaction = await this.createTransaction({
       amount: addP2PTransactionDto.amount,
-      description: addP2PTransactionDto.description,
+      description:
+        addP2PTransactionDto.description ??
+        `Add ${addP2PTransactionDto.amount} to ${addP2PTransactionDto.toUserId}'s personal wallet`,
       type: TransactionType.P2P,
       toWallet: userToWallet,
       fromWallet: userFromWallet,
@@ -229,12 +237,28 @@ export class TransactionService {
       statusUpdater: user,
     });
 
-    const saved = await this.transactionRepository.save(newTransaction);
-    const reloaded = await this.reloadTransactionWithRelations(saved);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('P2P transaction added successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
     });
+  }
+
+  /**
+   * Ensures that the wallet has sufficient balance to perform the transaction.
+   * @param wallet - Wallet to check the balance of
+   * @param amount - Amount to check the balance against
+   * @returns Promise that resolves to void
+   * @throws BadRequestException if the wallet does not have sufficient balance
+   */
+  async ensureSufficientBalanceWithPendingTransactions(wallet: Wallet, amount: number): Promise<void> {
+    const pendingTransactionsAmount = await this.transactionRepository.sum('amount', {
+      fromWalletId: wallet.id,
+      status: TransactionStatus.PENDING,
+    });
+    if (pendingTransactionsAmount && pendingTransactionsAmount > wallet.balance - amount) {
+      throw new BadRequestException('Insufficient balance in your wallet. You have pending transactions.');
+    }
   }
 
   /**
@@ -266,6 +290,7 @@ export class TransactionService {
       case TransactionType.WITHDRAW_PERSONAL:
         await this.applyWalletBalanceChange(transaction.fromWallet, transaction.amount, 'debit');
         break;
+
       default:
         throw new BadRequestException('Invalid transaction type');
     }
@@ -339,7 +364,7 @@ export class TransactionService {
   private async reloadTransactionWithRelations(transaction: Transaction): Promise<Transaction> {
     const loadedTransaction = await this.transactionRepository.findOne({
       where: { id: transaction.id },
-      relations: ['toWallet', 'initiator', 'fromWallet', 'statusUpdater'],
+      relations: ['initiator', 'statusUpdater'],
     });
 
     if (!loadedTransaction) {
