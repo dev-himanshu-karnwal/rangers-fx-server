@@ -91,6 +91,20 @@ export class UserController {
   }
 
   /**
+   * Update the authenticated user's personal details (non-sensitive fields).
+   * @param updateUserDto - Partial user data for personal details update
+   * @param user - Current authenticated user (injected by `@CurrentUser`)
+   * @returns ApiResponse containing the updated user DTO
+   */
+  @Patch('personal-details')
+  @HttpCode(HttpStatus.OK)
+  async updatePersonalDetails(
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userService.updatePersonalDetails(updateUserDto, user);
+  }
+  /**
    * Get User direct-children
    * @param UserId -  User ID
    * @returns List of user

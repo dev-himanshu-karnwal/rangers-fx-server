@@ -377,4 +377,20 @@ export class UserService {
     const updatedUser = await this.update(currentUser.id, currentUser);
     return ApiResponse.success('Email changed successfully.', { user: new UserResponseDto(updatedUser) });
   }
+
+  /**
+   * Update personal details for the authenticated user.
+   * - Applies non-sensitive updates (name, contact, profile fields) provided in `updateUserDto`.
+   * - Uses the internal `update` method to perform validation and persistence.
+   * @param updateUserDto - Partial user fields for personal details update
+   * @param currentUser - Current authenticated user entity
+   * @returns ApiResponse containing the updated `UserResponseDto`
+   */
+  async updatePersonalDetails(
+    updateUserDto: UpdateUserDto,
+    currentUser: User,
+  ): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    const updatedUser = await this.update(currentUser.id, updateUserDto);
+    return ApiResponse.success('Personal details updated successfully.', { user: new UserResponseDto(updatedUser) });
+  }
 }
