@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
-import { ChangeMailDto, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
+import { ChangeMailDto, ChangePasswordDto, EmailVerifyDTO, UpdateUserDto, UserResponseDto } from './dto';
 import { USER_CONSTANTS } from './constants/user.constants';
 import { ApiResponse } from '../../common/response/api.response';
 import { ReferralService } from './services/referral.service';
@@ -353,18 +353,14 @@ export class UserService {
    * @param updateUserEmail - DTO containing `oldEmail` (and optionally `newEmail`)
    * @returns ApiResponse with success message if OTP was generated/sent
    */
-  async changeEmail(updateUserEmail: ChangeMailDto): Promise<ApiResponse<null>> {
-    const user = await this.userRepository.findOne({ where: { email: updateUserEmail.oldEmail } });
-    if (!user) {
-      throw new NotFoundException(`User with email ${updateUserEmail.oldEmail} not found`);
-    }
+  async verifyEmail(emailVerifyDTO: EmailVerifyDTO): Promise<ApiResponse<null>> {
     // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.CHANGE_EMAIL);
+    const otpCode = await this.otpService.generateOtp(emailVerifyDTO.email, OtpPurpose.VERIFY);
     if (this.configService.isProduction) {
-      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+      await this.emailService.sendVerificationEmail(emailVerifyDTO.email, 'user', otpCode);
     }
 
-    this.logger.log(`Login OTP sent to user: ${user.email}`);
+    this.logger.log(`Login OTP sent to user: ${emailVerifyDTO.email}`);
 
     return ApiResponse.success('OTP Sent Successfully.', null);
   }
@@ -373,15 +369,12 @@ export class UserService {
    * Complete change email process by updating the user's email after verification.
    * - Finds the user by `oldEmail`, updates to `newEmail` and returns updated user DTO
    * @param changeMailDto - DTO containing `oldEmail` and `newEmail`
+   * @param currentUser - Current authenticated user
    * @returns ApiResponse containing the updated user response DTO
    */
-  async completeChangeEmail(changeMailDto: ChangeMailDto): Promise<ApiResponse<{ user: UserResponseDto }>> {
-    const user = await this.userRepository.findOne({ where: { email: changeMailDto.oldEmail } });
-    if (!user) {
-      throw new NotFoundException(`User with email ${changeMailDto.oldEmail} not found`);
-    }
-    user.email = changeMailDto.newEmail!;
-    const updatedUser = await this.update(user.id, user);
+  async updateEmail(changeMailDto: ChangeMailDto, currentUser: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    currentUser.email = changeMailDto.email;
+    const updatedUser = await this.update(currentUser.id, currentUser);
     return ApiResponse.success('Email changed successfully.', { user: new UserResponseDto(updatedUser) });
   }
 }

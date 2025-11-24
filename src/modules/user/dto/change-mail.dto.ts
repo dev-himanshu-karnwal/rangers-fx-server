@@ -1,17 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for initiating and completing an email change.
- * - `oldEmail`: the user's existing email address (used to identify the account)
- * - `newEmail`: the desired new email address
- * Both fields are optional because the same DTO is reused for both OTP sending and completion flows.
+ * - `email`: the desired new email address
  */
 export class ChangeMailDto {
+  @IsString()
   @IsEmail()
-  @IsOptional()
-  oldEmail?: string;
-
-  @IsEmail()
-  @IsOptional()
-  newEmail?: string;
+  email: string;
 }

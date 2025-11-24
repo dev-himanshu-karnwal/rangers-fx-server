@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ChangeMailDto, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
+import { ChangeMailDto, EmailVerifyDTO, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -50,6 +50,47 @@ export class UserController {
   }
 
   /**
+   * Change current authenticated user's password
+   * @param changePasswordDto - DTO containing `oldPassword` and `newPassword`
+   * @param user - Current authenticated user (injected by `@CurrentUser`)
+   * @returns ApiResponse with success message on successful password change
+   */
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<null>> {
+    return this.userService.changePassword(changePasswordDto, user);
+  }
+
+  /**
+   * Verify the provided mail by sending otp.
+   * @param emailVerifyDTO - DTO containing the email
+   * @returns ApiResponse with success message indicating OTP was sent
+   */
+  @Patch('email/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() emailVerifyDTO: EmailVerifyDTO): Promise<ApiResponse<null>> {
+    return this.userService.verifyEmail(emailVerifyDTO);
+  }
+
+  /**
+   * Complete the change email by updating the user's email.
+   * @param changeMailDto - DTO containing oldEmail and newEmail
+   * @returns ApiResponse containing the updated user DTO
+   */
+  @Patch('email')
+  @HttpCode(HttpStatus.OK)
+  async updateEmail(
+    @Body() changeMailDto: ChangeMailDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userService.updateEmail(changeMailDto, user);
+  }
+
+  /**
    * Get User direct-children
    * @param UserId -  User ID
    * @returns List of user
@@ -72,43 +113,5 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
-  }
-
-  /**
-   * Change current authenticated user's password
-   * @param changePasswordDto - DTO containing `oldPassword` and `newPassword`
-   * @param user - Current authenticated user (injected by `@CurrentUser`)
-   * @returns ApiResponse with success message on successful password change
-   */
-  @Post('change-password')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  async changePassword(
-    @Body() changePasswordDto: ChangePasswordDto,
-    @CurrentUser() user: User,
-  ): Promise<ApiResponse<null>> {
-    return this.userService.changePassword(changePasswordDto, user);
-  }
-
-  /**
-   * Initiate change email flow by sending an OTP to the current (old) email.
-   * @param oldMail - DTO containing the current/old email (and optionally new email)
-   * @returns ApiResponse with success message indicating OTP was sent
-   */
-  @Post('change-email/sent-otp')
-  @HttpCode(HttpStatus.OK)
-  async changeEmail(@Body() oldMail: ChangeMailDto): Promise<ApiResponse<null>> {
-    return this.userService.changeEmail(oldMail);
-  }
-
-  /**
-   * Complete the change email flow by verifying OTP and updating the user's email.
-   * @param changeMailDto - DTO containing oldEmail, newEmail and OTP (as applicable)
-   * @returns ApiResponse containing the updated user DTO
-   */
-  @Post('change-email/complete')
-  @HttpCode(HttpStatus.OK)
-  async completeChangeEmail(@Body() changeMailDto: ChangeMailDto): Promise<ApiResponse<{ user: UserResponseDto }>> {
-    return this.userService.completeChangeEmail(changeMailDto);
   }
 }

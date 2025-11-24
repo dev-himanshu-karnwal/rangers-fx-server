@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEmail, IsEnum, MinLength, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsEnum, MinLength, IsBoolean, IsNumberString } from 'class-validator';
 import { UserRole, WorkRole, UserStatus } from '../enums/user.enum';
 
 /**
