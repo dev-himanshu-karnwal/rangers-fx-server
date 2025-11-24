@@ -6,6 +6,8 @@ import { OtpPurpose } from '../enums/otp.enum';
  * Maps to the 'otps' table in the database.
  */
 @Entity('otps')
+@Index('idx_otp_user_email', ['userEmail'])
+@Index('idx_otp_email_purpose', ['userEmail', 'purpose'])
 export class Otp {
   @PrimaryGeneratedColumn()
   id: number;

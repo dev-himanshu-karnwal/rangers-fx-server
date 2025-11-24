@@ -16,6 +16,9 @@ import { UserStatus, UserRole, WorkRole } from '../enums/user.enum';
  * Maps to the 'users' table in the database.
  */
 @Entity('users')
+@Index('idx_user_email', ['email'])
+@Index('idx_user_referral_code', ['referralCode'])
+@Index('idx_user_referred_by_user_id', ['referredByUserId'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;

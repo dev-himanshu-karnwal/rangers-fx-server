@@ -17,6 +17,8 @@ import { decimalTransformer } from 'src/common/transformers/decimal.transformer'
  * Maps to the 'wallets' table in the database.
  */
 @Entity('wallets')
+@Index('idx_wallet_user_id', ['userId'])
+@Index('idx_wallet_type', ['walletType'])
 export class Wallet {
   @PrimaryGeneratedColumn()
   id: number;

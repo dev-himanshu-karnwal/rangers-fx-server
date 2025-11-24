@@ -17,6 +17,8 @@ import { decimalTransformer } from 'src/common/transformers/decimal.transformer'
  * Transaction entity representing a transaction in the system.
  * Maps to the 'transactions' table in the database.
  */
+@Index('idx_transaction_id_status', ['id', 'status'])
+@Index('idx_transaction_status_fromwalletid', ['status', 'fromWalletId'])
 @Entity('transactions')
 export class Transaction {
   @PrimaryGeneratedColumn()
