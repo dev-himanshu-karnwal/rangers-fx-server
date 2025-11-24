@@ -6,6 +6,9 @@ import { ReferralService } from './services/referral.service';
 import { User } from './entities/user.entity';
 import { ClosureModule } from './closure/closure.module';
 import { WalletModule } from '../wallets/wallet.module';
+import { OtpModule } from '../otp/otp.module';
+import { EmailModule } from 'src/core/services/email/email.module';
+import { ConfigModule } from 'src/config/config.module';
 
 /**
  * User module - handles user-related operations
@@ -16,6 +19,9 @@ import { WalletModule } from '../wallets/wallet.module';
     TypeOrmModule.forFeature([User]),
     ClosureModule, // Import ClosureModule to access UserClosureService
     forwardRef(() => WalletModule), // Import WalletModule to access WalletService
+    OtpModule,
+    EmailModule,
+    ConfigModule,
   ],
   controllers: [UserController],
   providers: [UserService, ReferralService],

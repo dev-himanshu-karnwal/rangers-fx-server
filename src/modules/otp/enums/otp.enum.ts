@@ -6,4 +6,5 @@ export enum OtpPurpose {
   SIGNUP = 'signup',
   FORGOT_PASSWORD = 'forgot-password',
   VERIFY = 'verify',
+  CHANGE_EMAIL = 'change-email',
 }

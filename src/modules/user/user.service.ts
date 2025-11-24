@@ -1,15 +1,27 @@
-import { Injectable, ConflictException, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
-import { ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
+import { ChangeMailDto, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
 import { USER_CONSTANTS } from './constants/user.constants';
 import { ApiResponse } from '../../common/response/api.response';
 import { ReferralService } from './services/referral.service';
 import { UserClosureService } from './closure/closure.service';
 import { WalletService } from '../wallets/wallet.service';
 import { UserStatus } from './enums/user.enum';
+import { OtpService } from '../otp/otp.service';
+import { OtpPurpose } from '../otp/enums';
+import { EmailService } from 'src/core/services/email/email.service';
+import { ConfigService } from 'src/config/config.service';
 
 /**
  * User service handling business logic for user operations
@@ -25,6 +37,9 @@ export class UserService {
     private readonly referralService: ReferralService,
     private readonly userClosureService: UserClosureService,
     private readonly walletService: WalletService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+    private readonly otpService: OtpService,
   ) {}
 
   /**
@@ -339,5 +354,42 @@ export class UserService {
     await this.userRepository.save(userEntity);
 
     return ApiResponse.success('Password changed successfully.', null);
+  }
+
+  /**
+   * Initiate change email process by sending an OTP to the user's current (old) email.
+   * @param updateUserEmail - DTO containing `oldEmail` (and optionally `newEmail`)
+   * @returns ApiResponse with success message if OTP was generated/sent
+   */
+  async changeEmail(updateUserEmail: ChangeMailDto): Promise<ApiResponse<null>> {
+    const user = await this.userRepository.findOne({ where: { email: updateUserEmail.oldEmail } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${updateUserEmail.oldEmail} not found`);
+    }
+    // Generate and send OTP
+    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.CHANGE_EMAIL);
+    if (this.configService.isProduction) {
+      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
+    }
+
+    this.logger.log(`Login OTP sent to user: ${user.email}`);
+
+    return ApiResponse.success('OTP Sent Successfully.', null);
+  }
+
+  /**
+   * Complete change email process by updating the user's email after verification.
+   * - Finds the user by `oldEmail`, updates to `newEmail` and returns updated user DTO
+   * @param changeMailDto - DTO containing `oldEmail` and `newEmail`
+   * @returns ApiResponse containing the updated user response DTO
+   */
+  async completeChangeEmail(changeMailDto: ChangeMailDto): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    const user = await this.userRepository.findOne({ where: { email: changeMailDto.oldEmail } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${changeMailDto.oldEmail} not found`);
+    }
+    user.email = changeMailDto.newEmail!;
+    const updatedUser = await this.update(user.id, user);
+    return ApiResponse.success('Email changed successfully.', { user: new UserResponseDto(updatedUser) });
   }
 }
