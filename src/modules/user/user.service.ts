@@ -1,12 +1,4 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-  Logger,
-  BadRequestException,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';

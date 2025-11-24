@@ -90,24 +90,24 @@ export class UserController {
     return this.userService.changePassword(changePasswordDto, user);
   }
 
-  @Post('change-email/sent-otp')
-  @HttpCode(HttpStatus.OK)
   /**
    * Initiate change email flow by sending an OTP to the current (old) email.
    * @param oldMail - DTO containing the current/old email (and optionally new email)
    * @returns ApiResponse with success message indicating OTP was sent
    */
+  @Post('change-email/sent-otp')
+  @HttpCode(HttpStatus.OK)
   async changeEmail(@Body() oldMail: ChangeMailDto): Promise<ApiResponse<null>> {
     return this.userService.changeEmail(oldMail);
   }
 
-  @Post('change-email/complete')
-  @HttpCode(HttpStatus.OK)
   /**
    * Complete the change email flow by verifying OTP and updating the user's email.
    * @param changeMailDto - DTO containing oldEmail, newEmail and OTP (as applicable)
    * @returns ApiResponse containing the updated user DTO
    */
+  @Post('change-email/complete')
+  @HttpCode(HttpStatus.OK)
   async completeChangeEmail(@Body() changeMailDto: ChangeMailDto): Promise<ApiResponse<{ user: UserResponseDto }>> {
     return this.userService.completeChangeEmail(changeMailDto);
   }
