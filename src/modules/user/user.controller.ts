@@ -1,8 +1,10 @@
-import { Controller, Get, Patch, Body, Param, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, ParseIntPipe, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserDto, UserResponseDto } from './dto';
+import { ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
-import { Public } from '../../common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -41,6 +43,7 @@ export class UserController {
    * @returns List of user
    */
   @Get(':id/direct-children')
+  @HttpCode(HttpStatus.OK)
   async getDirectChildernOfUserbyId(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
@@ -57,5 +60,21 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
+  }
+
+  /**
+   * Change current authenticated user's password
+   * @param changePasswordDto - DTO containing `oldPassword` and `newPassword`
+   * @param user - Current authenticated user (injected by `@CurrentUser`)
+   * @returns ApiResponse with success message on successful password change
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<null>> {
+    return this.userService.changePassword(changePasswordDto, user);
   }
 }

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, FindOneOptions, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
-import { UpdateUserDto, UserResponseDto } from './dto';
+import { ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
 import { USER_CONSTANTS } from './constants/user.constants';
 import { ApiResponse } from '../../common/response/api.response';
 import { ReferralService } from './services/referral.service';
@@ -300,5 +300,44 @@ export class UserService {
     }
 
     return updatedUser;
+  }
+
+  /**
+   * Change password for the current authenticated user.
+   * - Verifies the provided `oldPassword` matches the stored password hash
+   * - Ensures the `newPassword` is different from the old password
+   * - Hashes and stores the new password and updates the `passwordUpdatedAt`
+   * @param changePasswordDto - Contains `oldPassword` and `newPassword`
+   * @param user - Current authenticated user (from controller)
+   * @returns ApiResponse<null> on success
+   */
+  async changePassword(changePasswordDto: ChangePasswordDto, user: User): Promise<ApiResponse<null>> {
+    const currentUser = this.getMe(user);
+    if (!currentUser.data) {
+      throw new NotFoundException('Login First to change password.');
+    }
+    const userEntity = await this.userRepository.findOne({ where: { id: currentUser.data.user.id } });
+    if (!userEntity || !userEntity.passwordHash) {
+      throw new NotFoundException('User Not found or password not set.');
+    }
+    const isMatch = await bcrypt.compare(changePasswordDto.oldPassword, userEntity.passwordHash);
+    if (!isMatch) {
+      throw new BadRequestException('Old password does not match.');
+    }
+
+    if (changePasswordDto.oldPassword === changePasswordDto.newPassword) {
+      throw new BadRequestException('New password must be different from old password.');
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(changePasswordDto.newPassword, USER_CONSTANTS.SALT_ROUNDS);
+
+    // Update password and passwordUpdatedAt
+    userEntity.passwordHash = newPasswordHash;
+    userEntity.passwordUpdatedAt = new Date();
+
+    await this.userRepository.save(userEntity);
+
+    return ApiResponse.success('Password changed successfully.', null);
   }
 }
