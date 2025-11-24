@@ -184,6 +184,15 @@ export class TransactionService {
       throw new NotFoundException('Recipient wallet not found');
     }
 
+    const pendingTransactionsAmount = await this.transactionRepository.sum('amount', {
+      fromWalletId: userFromWallet.id,
+      status: TransactionStatus.PENDING,
+    });
+
+    if (pendingTransactionsAmount && pendingTransactionsAmount > userFromWallet.balance - addP2PTransactionDto.amount) {
+      throw new BadRequestException('Insufficient balance in your wallet. You have pending transactions.');
+    }
+
     userFromWallet.balance -= addP2PTransactionDto.amount;
     await this.walletService.saveWallet(userFromWallet);
 
