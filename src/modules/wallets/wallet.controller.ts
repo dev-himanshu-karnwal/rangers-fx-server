@@ -29,17 +29,17 @@ export class WalletController {
    * Get the company's income wallet
    * @returns ApiResponse containing the company income wallet DTO
    */
-  @Get('Company-income')
+  @Get('company-income')
   async getCompanyIncome(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    return this.walletService.getCompanyIncome();
+    return this.walletService.getCompanyIncomeWallet();
   }
 
   /**
    * Get the company's investment wallet
    * @returns ApiResponse containing the company investment wallet DTO
    */
-  @Get('Company-investment')
+  @Get('company-investment')
   async getCompanyInvestment(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    return this.walletService.getCompanyInvestment();
+    return this.walletService.getCompanyInvestmentWallet();
   }
 }

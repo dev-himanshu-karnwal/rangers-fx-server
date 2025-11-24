@@ -48,7 +48,7 @@ export class WalletService {
    * Fetch the company's income wallet
    * @returns ApiResponse containing the company income wallet DTO
    */
-  async getCompanyIncome(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+  async getCompanyIncomeWallet(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     const wallet = await this.walletRepository.findOne({ where: { walletType: Equal(WalletType.COMPANY_INCOME) } });
     if (!wallet) {
       throw new NotFoundException('Company income wallet not found.');
@@ -60,11 +60,23 @@ export class WalletService {
    * Fetch the company's investment wallet
    * @returns ApiResponse containing the company investment wallet DTO
    */
-  async getCompanyInvestment(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+  async getCompanyInvestmentWallet(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     const wallet = await this.walletRepository.findOne({ where: { walletType: Equal(WalletType.COMPANY_INVESTMENT) } });
     if (!wallet) {
       throw new NotFoundException('Company investment wallet not found.');
     }
     return ApiResponse.success('Company investment fetched successfully.', { wallet: new WalletResponseDto(wallet) });
+  }
+
+  /**
+   * Increases the balance of the company investment wallet by the specified amount.
+   * @param amount - The amount to increase the balance by
+   * @returns Promise that resolves to the updated Wallet entity
+   */
+  async increaseCompanyInvestmentWalletBalance(amount: number): Promise<Wallet> {
+    const walletResponse = await this.getCompanyInvestmentWallet();
+    const wallet = walletResponse.data!.wallet;
+    wallet.balance += amount;
+    return await this.walletRepository.save(wallet);
   }
 }

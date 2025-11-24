@@ -30,7 +30,8 @@ export class TransactionService {
     addCompanyTransactionDto: AddCompanyTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const companyWallet = await this.walletService.getCompanyInvestmentWallet();
+    const companyWalletResponse = await this.walletService.getCompanyInvestmentWallet();
+    const companyWallet = companyWalletResponse.data!.wallet;
 
     const newTransaction = this.transactionRepository.create({
       amount: addCompanyTransactionDto.amount,
