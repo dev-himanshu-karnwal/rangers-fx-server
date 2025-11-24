@@ -14,10 +14,32 @@ import { User } from '../user/entities';
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  // TODO: Add wallet endpoints here
+  /**
+   * Get current authenticated user's wallet
+   * @param user - Current authenticated user (injected by @CurrentUser)
+   * @returns ApiResponse containing the user's wallet DTO
+   */
   @Get('mine')
   @UseGuards(JwtAuthGuard)
   async getCurrentUserWallet(@CurrentUser() user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     return await this.walletService.getCurrentUserWallet(user);
+  }
+
+  /**
+   * Get the company's income wallet
+   * @returns ApiResponse containing the company income wallet DTO
+   */
+  @Get('Company-income')
+  async getCompanyIncome(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    return this.walletService.getCompanyIncome();
+  }
+
+  /**
+   * Get the company's investment wallet
+   * @returns ApiResponse containing the company investment wallet DTO
+   */
+  @Get('Company-investment')
+  async getCompanyInvestment(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    return this.walletService.getCompanyInvestment();
   }
 }
