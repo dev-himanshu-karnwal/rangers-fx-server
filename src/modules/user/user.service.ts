@@ -61,6 +61,25 @@ export class UserService {
   }
 
   /**
+   * Find user by email
+   * @param email - User email
+   * @returns User response DTO
+   */
+  async getUserByEmail(email: string): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return ApiResponse.success('User fetched successfully', {
+      user: new UserResponseDto({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+      }),
+    });
+  }
+
+  /**
    * Find user by email (internal use)
    * @param email - User email
    * @returns User entity or null

@@ -27,6 +27,16 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /**
+   * Get user by Email
+   * @param email - User Email
+   * @returns { user: { id:number, email:string, fullName:string} }
+   */
+  @Get('by-email')
+  @HttpCode(HttpStatus.OK)
+  async getUserByEmail(@Body() emailDto: EmailVerifyDTO): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userService.getUserByEmail(emailDto.email);
+  }
+  /**
    * Get user by ID
    * @param id - User ID
    * @returns User response DTO
