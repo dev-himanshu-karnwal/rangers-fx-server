@@ -215,9 +215,11 @@ export class AuthService {
    */
   async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<ApiResponse<null>> {
     // Verify user exists
-    const user = await this.userService.findByEmail(verifyOtpDto.userEmail);
-    if (!user) {
-      throw new NotFoundException('User not found');
+    if (verifyOtpDto.purpose !== OtpPurpose.VERIFY) {
+      const user = await this.userService.findByEmail(verifyOtpDto.userEmail);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
     }
 
     // Match OTP
