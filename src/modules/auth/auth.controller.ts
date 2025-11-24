@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res, Get, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Patch, Res, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
 import { Public } from '../../common/decorators/public.decorator';
@@ -14,7 +14,6 @@ import {
 } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
 import { UserResponseDto } from '../user/dto';
@@ -60,6 +59,7 @@ export class AuthController {
    * Request Loggout
    */
   @Post('logout')
+  @Public()
   logout(@Res({ passthrough: true }) res: Response): ApiResponse<null> {
     return this.authService.logout(res);
   }
@@ -132,7 +132,6 @@ export class AuthController {
    * @returns Authentication response with current user info
    */
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   getMe(@CurrentUser() user: User) {
     return this.userService.getMe(user);
   }

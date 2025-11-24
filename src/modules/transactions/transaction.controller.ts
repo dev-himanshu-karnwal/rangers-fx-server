@@ -1,16 +1,16 @@
-import { Controller, Post, Body, UseGuards, Patch, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { AddCompanyTransactionDto, TransactionResponseDto } from './dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ApiResponse } from 'src/common/response/api.response';
+import { AdminGuard } from 'src/common/guards/admin.guard';
+import { Admin } from 'src/common/decorators/admin.decorator';
 
 /**
  * Transaction controller - handles transaction-related HTTP requests
  */
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
@@ -20,6 +20,8 @@ export class TransactionController {
    * @param user - The current authenticated user
    * @returns ApiResponse containing the newly created transaction
    */
+  @UseGuards(AdminGuard)
+  @Admin()
   @Post('add:company')
   async addCompanyTransaction(
     @Body() addCompanyTransactionDto: AddCompanyTransactionDto,
@@ -34,6 +36,8 @@ export class TransactionController {
    * @param user - The current authenticated user
    * @returns ApiResponse containing the approved transaction
    */
+  @UseGuards(AdminGuard)
+  @Admin()
   @Patch(':id/status/approve')
   async approveTransaction(
     @Param('id', ParseIntPipe) transactionId: number,
@@ -48,6 +52,8 @@ export class TransactionController {
    * @param user - The current authenticated user
    * @returns ApiResponse containing the rejected transaction
    */
+  @UseGuards(AdminGuard)
+  @Admin()
   @Patch(':id/status/reject')
   async rejectTransaction(
     @Param('id', ParseIntPipe) transactionId: number,

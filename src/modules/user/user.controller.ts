@@ -1,20 +1,8 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  Param,
-  ParseIntPipe,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto, UserResponseDto } from './dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
+import { Public } from '../../common/decorators/public.decorator';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -41,6 +29,7 @@ export class UserController {
    * @returns User response DTO
    */
   @Get('referral-code/:referralCode')
+  @Public()
   @HttpCode(HttpStatus.OK)
   async findOneByReferralCode(@Param('referralCode') referralCode: string): Promise<UserResponseDto> {
     return this.userService.findOneByReferralCode(referralCode);
@@ -65,7 +54,6 @@ export class UserController {
    * @returns Updated user response DTO
    */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);

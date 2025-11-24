@@ -2,9 +2,10 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiResponse } from 'src/common/response/api.response';
 import { WalletResponseDto } from './dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
+import { AdminGuard } from 'src/common/guards/admin.guard';
+import { Admin } from 'src/common/decorators/admin.decorator';
 
 /**
  * Wallet controller handling HTTP requests for wallet operations
@@ -20,7 +21,6 @@ export class WalletController {
    * @returns ApiResponse containing the user's wallet DTO
    */
   @Get('mine')
-  @UseGuards(JwtAuthGuard)
   async getCurrentUserWallet(@CurrentUser() user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     return await this.walletService.getCurrentUserWallet(user);
   }
@@ -29,6 +29,8 @@ export class WalletController {
    * Get the company's income wallet
    * @returns ApiResponse containing the company income wallet DTO
    */
+  @UseGuards(AdminGuard)
+  @Admin()
   @Get('company-income')
   async getCompanyIncome(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     return this.walletService.getCompanyIncomeWallet();
@@ -38,6 +40,8 @@ export class WalletController {
    * Get the company's investment wallet
    * @returns ApiResponse containing the company investment wallet DTO
    */
+  @UseGuards(AdminGuard)
+  @Admin()
   @Get('company-investment')
   async getCompanyInvestment(): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     return this.walletService.getCompanyInvestmentWallet();

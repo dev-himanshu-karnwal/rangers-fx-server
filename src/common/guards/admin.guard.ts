@@ -23,7 +23,7 @@ export class AdminGuard extends AuthGuard('jwt') {
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // First, ensure JWT authentication passes
-    const isAuthenticated = await super.canActivate(context);
+    const isAuthenticated = await (super.canActivate(context) as Promise<boolean>);
     if (!isAuthenticated) {
       return false;
     }
