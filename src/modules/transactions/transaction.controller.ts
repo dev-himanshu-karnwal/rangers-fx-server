@@ -1,4 +1,15 @@
-import { Controller, Post, Body, Patch, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Patch,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Get,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import {
   AddCompanyTransactionDto,
@@ -35,6 +46,16 @@ export class TransactionController {
     @CurrentUser() user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
     return this.transactionService.addCompanyTransaction(addCompanyTransactionDto, user);
+  }
+
+  /**
+   * Retrieve all transactions in the system, ordered by creation date (newest first).
+   * @returns ApiResponse containing an array of TransactionResponseDto
+   */
+  @Get('all')
+  @HttpCode(HttpStatus.OK)
+  async getAllTransactions(): Promise<ApiResponse<{ transactions: TransactionResponseDto[] }>> {
+    return this.transactionService.getAllTransactions();
   }
 
   /**

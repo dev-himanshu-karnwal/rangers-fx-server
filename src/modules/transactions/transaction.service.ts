@@ -29,6 +29,22 @@ export class TransactionService {
   ) {}
 
   /**
+   * Fetches all transactions from the repository with related entities.
+   * - Includes relations: `toWallet`, `fromWallet`, `initiator`, and `statusUpdater`.
+   * - Orders results by `createdAt` descending.
+   * @returns ApiResponse containing an array of TransactionResponseDto
+   */
+  async getAllTransactions(): Promise<ApiResponse<{ transactions: TransactionResponseDto[] }>> {
+    const transactions = await this.transactionRepository.find({
+      relations: ['toWallet', 'fromWallet', 'initiator', 'statusUpdater'],
+      order: { createdAt: 'DESC' },
+    });
+    return ApiResponse.success('Transactions retrieved successfully', {
+      transactions: transactions.map((transactions) => TransactionResponseDto.fromEntity(transactions)),
+    });
+  }
+
+  /**
    * Creates and adds a company transaction to the company investment wallet.
    * @param addCompanyTransactionDto - Payload for the new company transaction
    * @param user - Authenticated user initiating the transaction
