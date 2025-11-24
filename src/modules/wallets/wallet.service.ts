@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, Repository } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
@@ -35,7 +35,7 @@ export class WalletService {
    * @param user - Current authenticated user (passed from controller)
    * @returns ApiResponse containing the user's wallet DTO
    */
-  async getCurrentUserWallet(user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+  async getUserWallet(user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     const currentUser = this.userService.getMe(user);
     const wallet = await this.walletRepository.findOne({ where: { userId: currentUser.data?.user.id } });
     if (!wallet) {
@@ -75,6 +75,36 @@ export class WalletService {
    */
   async increaseCompanyInvestmentWalletBalance(amount: number): Promise<Wallet> {
     const walletResponse = await this.getCompanyInvestmentWallet();
+    const wallet = walletResponse.data!.wallet;
+    wallet.balance += amount;
+    return await this.walletRepository.save(wallet);
+  }
+
+  /**
+   * Decreases the balance of the company investment wallet by the specified amount.
+   * @param amount - The amount to decrease the balance by
+   * @returns Promise that resolves to the updated Wallet entity
+   */
+  async decreaseCompanyInvestmentWalletBalance(amount: number): Promise<Wallet> {
+    const walletResponse = await this.getCompanyInvestmentWallet();
+    const wallet = walletResponse.data!.wallet;
+
+    if (wallet.balance < amount) {
+      throw new BadRequestException('Insufficient balance in company investment wallet');
+    }
+
+    wallet.balance -= amount;
+    return await this.walletRepository.save(wallet);
+  }
+
+  /**
+   * Increases the balance of the personal wallet by the specified amount.
+   * @param amount - The amount to increase the balance by
+   * @param user - The user to increase the balance for
+   * @returns Promise that resolves to the updated Wallet entity
+   */
+  async increasePersonalWalletBalance(amount: number, user: User): Promise<Wallet> {
+    const walletResponse = await this.getUserWallet(user);
     const wallet = walletResponse.data!.wallet;
     wallet.balance += amount;
     return await this.walletRepository.save(wallet);

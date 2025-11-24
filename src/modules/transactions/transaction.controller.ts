@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Patch, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { AddCompanyTransactionDto, TransactionResponseDto } from './dto';
+import { AddCompanyTransactionDto, AddPersonalTransactionDto, TransactionResponseDto } from './dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -22,12 +22,26 @@ export class TransactionController {
    */
   @UseGuards(AdminGuard)
   @Admin()
-  @Post('add:company')
+  @Post('add-company')
   async addCompanyTransaction(
     @Body() addCompanyTransactionDto: AddCompanyTransactionDto,
     @CurrentUser() user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
     return this.transactionService.addCompanyTransaction(addCompanyTransactionDto, user);
+  }
+
+  /**
+   * Adds a new user transaction.
+   * @param addPersonalTransactionDto - Data for the new personal transaction
+   * @param user - The current authenticated user
+   * @returns ApiResponse containing the newly created personal transaction
+   */
+  @Post('add-personal')
+  async addPersonalTransaction(
+    @Body() addPersonalTransactionDto: AddPersonalTransactionDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    return this.transactionService.addPersonalTransaction(addPersonalTransactionDto, user);
   }
 
   /**

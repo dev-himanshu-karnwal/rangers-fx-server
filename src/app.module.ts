@@ -10,11 +10,12 @@ import { AuthModule } from './modules/auth/auth.module';
 import { WalletModule } from './modules/wallets/wallet.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { EmailModule } from './core/services/email/email.module';
+import { TransactionModule } from './modules/transactions/transaction.module';
 
 @Module({
   imports: [
     ConfigModule,
-    EmailModule, // Import EmailModule for email services
+    EmailModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -26,13 +27,14 @@ import { EmailModule } from './core/services/email/email.module';
         database: configService.dbName,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.isDevelopment,
-        logging: configService.isDevelopment,
+        logging: false,
       }),
       inject: [ConfigService],
     }),
     UserModule,
     AuthModule,
     WalletModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [

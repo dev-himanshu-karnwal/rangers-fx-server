@@ -21,8 +21,8 @@ export class WalletController {
    * @returns ApiResponse containing the user's wallet DTO
    */
   @Get('mine')
-  async getCurrentUserWallet(@CurrentUser() user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
-    return await this.walletService.getCurrentUserWallet(user);
+  async getUserWallet(@CurrentUser() user: User): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    return await this.walletService.getUserWallet(user);
   }
 
   /**

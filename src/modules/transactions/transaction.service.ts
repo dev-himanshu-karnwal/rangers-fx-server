@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
-import { AddCompanyTransactionDto, TransactionResponseDto } from './dto';
+import { AddCompanyTransactionDto, AddPersonalTransactionDto, TransactionResponseDto } from './dto';
 import { TransactionStatus, TransactionType } from './enums/transaction.enum';
 import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
@@ -51,6 +51,40 @@ export class TransactionService {
   }
 
   /**
+   * Creates and adds a personal transaction to the current user wallet.
+   * @param addPersonalTransactionDto - Payload for the new personal transaction
+   * @param user - Authenticated user initiating the transaction
+   * @returns Success ApiResponse containing the created transaction
+   */
+  async addPersonalTransaction(
+    addPersonalTransactionDto: AddPersonalTransactionDto,
+    user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    const userWalletResponse = await this.walletService.getUserWallet(user);
+    const userWallet = userWalletResponse.data!.wallet;
+
+    const companyInvestmentWalletResponse = await this.walletService.getCompanyInvestmentWallet();
+    const companyInvestmentWallet = companyInvestmentWalletResponse.data!.wallet;
+
+    const newTransaction = this.transactionRepository.create({
+      amount: addPersonalTransactionDto.amount,
+      description: addPersonalTransactionDto.description,
+      type: TransactionType.ADD_PERSONAL,
+      toWallet: userWallet,
+      fromWallet: companyInvestmentWallet,
+      initiator: user,
+      entityId: userWallet.id,
+    });
+
+    const saved = await this.transactionRepository.save(newTransaction);
+    const reloaded = await this.reloadTransactionWithRelations(saved);
+
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal transaction added successfully', {
+      transaction: TransactionResponseDto.fromEntity(reloaded),
+    });
+  }
+
+  /**
    * Approves a pending transaction by marking its status as APPROVED.
    * @param transactionId - ID of the transaction to approve
    * @param user - User approving the transaction
@@ -61,9 +95,20 @@ export class TransactionService {
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
     const transaction = await this.findPendingTransactionById(transactionId);
-    if (transaction.type === TransactionType.ADD_COMPANY) {
-      await this.walletService.increaseCompanyInvestmentWalletBalance(transaction.amount);
+
+    switch (transaction.type) {
+      case TransactionType.ADD_COMPANY:
+        await this.walletService.increaseCompanyInvestmentWalletBalance(transaction.amount);
+        break;
+
+      case TransactionType.ADD_PERSONAL:
+        await this.walletService.decreaseCompanyInvestmentWalletBalance(transaction.amount);
+        await this.walletService.increasePersonalWalletBalance(transaction.amount, user);
+        break;
+      default:
+        throw new BadRequestException('Invalid transaction type');
     }
+
     return this.changeStatus(transaction, TransactionStatus.APPROVED, user);
   }
 

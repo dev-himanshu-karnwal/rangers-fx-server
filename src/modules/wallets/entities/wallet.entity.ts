@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { WalletType } from '../enums/wallet.enum';
 import { User } from '../../user/entities/user.entity';
+import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
 
 /**
  * Wallet entity representing a wallet in the system.
@@ -28,7 +29,7 @@ export class Wallet {
   @JoinColumn({ name: 'user_id' })
   user?: User | null;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0.0, nullable: false })
+  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0.0, nullable: false, transformer: decimalTransformer })
   balance: number;
 
   @Column({
