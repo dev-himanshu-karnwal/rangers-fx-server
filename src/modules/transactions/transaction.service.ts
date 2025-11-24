@@ -7,11 +7,14 @@ import {
   AddP2PTransactionDto,
   AddPersonalTransactionDto,
   TransactionResponseDto,
+  WithdrawCompanyTransactionDto,
+  WithdrawPersonalTransactionDto,
 } from './dto';
 import { TransactionStatus, TransactionType } from './enums/transaction.enum';
 import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
 import { ApiResponse } from 'src/common/response/api.response';
+import { Wallet } from '../wallets/entities/wallet.entity';
 
 /**
  * TransactionService provides business logic for handling transactions such as creation,
@@ -51,6 +54,74 @@ export class TransactionService {
     const reloaded = await this.reloadTransactionWithRelations(saved);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Company transaction added successfully', {
+      transaction: TransactionResponseDto.fromEntity(reloaded),
+    });
+  }
+
+  /**
+   * Creates a withdrawal transaction from the company income wallet.
+   * @param withdrawCompanyTransactionDto - Payload for the company withdrawal
+   * @param user - Authenticated admin initiating the transaction
+   * @returns Success ApiResponse containing the created transaction
+   */
+  async withdrawCompanyTransaction(
+    withdrawCompanyTransactionDto: WithdrawCompanyTransactionDto,
+    user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    const companyIncomeWalletResponse = await this.walletService.getCompanyIncomeWallet();
+    const companyIncomeWallet = companyIncomeWalletResponse.data!.wallet;
+
+    if (companyIncomeWallet.balance < withdrawCompanyTransactionDto.amount) {
+      throw new BadRequestException('Insufficient balance in company income wallet');
+    }
+
+    const newTransaction = this.transactionRepository.create({
+      amount: withdrawCompanyTransactionDto.amount,
+      description: withdrawCompanyTransactionDto.description,
+      type: TransactionType.WITHDRAW_COMPANY,
+      fromWallet: companyIncomeWallet,
+      initiator: user,
+      entityId: companyIncomeWallet.id,
+    });
+
+    const saved = await this.transactionRepository.save(newTransaction);
+    const reloaded = await this.reloadTransactionWithRelations(saved);
+
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>('Company withdrawal requested successfully', {
+      transaction: TransactionResponseDto.fromEntity(reloaded),
+    });
+  }
+
+  /**
+   * Creates a withdrawal transaction from the user's personal wallet.
+   * @param withdrawPersonalTransactionDto - Payload for the personal withdrawal
+   * @param user - Authenticated user initiating the transaction
+   * @returns Success ApiResponse containing the created transaction
+   */
+  async withdrawPersonalTransaction(
+    withdrawPersonalTransactionDto: WithdrawPersonalTransactionDto,
+    user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    const userWalletResponse = await this.walletService.getUserWallet(user.id);
+    const userWallet = userWalletResponse.data!.wallet;
+
+    if (userWallet.balance < withdrawPersonalTransactionDto.amount) {
+      throw new BadRequestException('Insufficient balance in your wallet');
+    }
+
+    const newTransaction = this.transactionRepository.create({
+      amount: withdrawPersonalTransactionDto.amount,
+      description: withdrawPersonalTransactionDto.description,
+      type: TransactionType.WITHDRAW_PERSONAL,
+      fromWallet: userWallet,
+      initiator: user,
+      entityId: userWallet.id,
+    });
+
+    const saved = await this.transactionRepository.save(newTransaction);
+    const reloaded = await this.reloadTransactionWithRelations(saved);
+
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal withdrawal requested successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
     });
   }
@@ -160,7 +231,15 @@ export class TransactionService {
 
       case TransactionType.ADD_PERSONAL:
         await this.walletService.decreaseCompanyInvestmentWalletBalance(transaction.amount);
-        await this.walletService.increasePersonalWalletBalance(transaction.amount, user);
+        await this.applyWalletBalanceChange(transaction.toWallet, transaction.amount, 'credit');
+        break;
+
+      case TransactionType.WITHDRAW_COMPANY:
+        await this.applyWalletBalanceChange(transaction.fromWallet, transaction.amount, 'debit');
+        break;
+
+      case TransactionType.WITHDRAW_PERSONAL:
+        await this.applyWalletBalanceChange(transaction.fromWallet, transaction.amount, 'debit');
         break;
       default:
         throw new BadRequestException('Invalid transaction type');
@@ -217,6 +296,7 @@ export class TransactionService {
   private async findPendingTransactionById(transactionId: number): Promise<Transaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id: transactionId, status: TransactionStatus.PENDING },
+      relations: ['toWallet', 'fromWallet', 'initiator'],
     });
 
     if (!transaction) {
@@ -241,5 +321,28 @@ export class TransactionService {
       throw new NotFoundException('Transaction not found after reload');
     }
     return loadedTransaction;
+  }
+
+  /**
+   * Applies a balance change to the provided wallet entity.
+   * @param wallet - Wallet to update
+   * @param amount - Amount to credit or debit
+   * @param direction - Whether to credit or debit the wallet
+   */
+  private async applyWalletBalanceChange(
+    wallet: Wallet | null | undefined,
+    amount: number,
+    direction: 'credit' | 'debit',
+  ): Promise<void> {
+    if (!wallet) {
+      throw new BadRequestException('Wallet not associated with the transaction');
+    }
+
+    if (direction === 'debit' && wallet.balance < amount) {
+      throw new BadRequestException('Insufficient wallet balance to approve transaction');
+    }
+
+    wallet.balance = direction === 'credit' ? wallet.balance + amount : wallet.balance - amount;
+    await this.walletService.saveWallet(wallet);
   }
 }

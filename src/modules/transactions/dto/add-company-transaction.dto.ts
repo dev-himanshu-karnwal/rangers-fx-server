@@ -1,15 +1,6 @@
-import { IsDefined, IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
+import { AmountDescriptionDto } from './amount-description.dto';
 
 /**
  * DTO for adding a company transaction
  */
-export class AddCompanyTransactionDto {
-  @IsDefined()
-  @IsNotEmpty()
-  @IsNumber()
-  amount: number;
-
-  @IsString()
-  @IsOptional()
-  description?: string | null;
-}
+export class AddCompanyTransactionDto extends AmountDescriptionDto {}
