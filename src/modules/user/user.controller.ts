@@ -1,10 +1,22 @@
-import { Controller, Get, Patch, Body, Param, ParseIntPipe, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 
 /**
  * User controller handling HTTP requests for user operations
