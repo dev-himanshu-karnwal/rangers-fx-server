@@ -27,7 +27,7 @@ export class TransactionController {
    */
   @UseGuards(AdminGuard)
   @Admin()
-  @Post('add-company')
+  @Post('company')
   async addCompanyTransaction(
     @Body() addCompanyTransactionDto: AddCompanyTransactionDto,
     @CurrentUser() user: User,
@@ -41,7 +41,7 @@ export class TransactionController {
    * @param user - The current authenticated user
    * @returns ApiResponse containing the newly created personal transaction
    */
-  @Post('add-personal')
+  @Post('personal')
   async addPersonalTransaction(
     @Body() addPersonalTransactionDto: AddPersonalTransactionDto,
     @CurrentUser() user: User,
@@ -55,7 +55,7 @@ export class TransactionController {
    * @param user - The current authenticated user
    * @returns ApiResponse containing the newly created p2p transaction
    */
-  @Post('add-p2p')
+  @Post('p2p')
   async addP2PTransaction(
     @Body() addP2PTransactionDto: AddP2PTransactionDto,
     @CurrentUser() user: User,
