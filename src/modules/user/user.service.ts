@@ -4,6 +4,7 @@ import { User } from './entities/user.entity';
 import { ChangeMailDto, ChangePasswordDto, EmailVerifyDTO, UpdateUserDto, UserResponseDto } from './dto';
 import { ApiResponse } from '../../common/response/api.response';
 import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { UserStatus, WorkRole } from './enums/user.enum';
 import {
   UserQueryService,
   UserPasswordService,
@@ -228,6 +229,15 @@ export class UserService {
   }
 
   /**
+   * Save user
+   * @param user - User to save
+   * @returns Saved user
+   */
+  async saveUser(user: User): Promise<User> {
+    return this.userUpdateService.saveUser(user);
+  }
+
+  /**
    * Update personal details for the authenticated user.
    * @param updateUserDto - Partial user fields for personal details update
    * @param currentUser - Current authenticated user entity
@@ -239,5 +249,27 @@ export class UserService {
   ): Promise<ApiResponse<{ user: UserResponseDto }>> {
     const result = await this.userUpdateService.updatePersonalDetails(updateUserDto, currentUser);
     return ApiResponse.success('Personal details updated successfully.', result);
+  }
+
+  /**
+   * Deactivates a user by setting status to INACTIVE
+   * @param user - User entity to deactivate
+   * @returns Updated user entity
+   */
+  async deactivateUser(user: User): Promise<User> {
+    return this.userUpdateService.inactivateUser(user);
+  }
+
+  /**
+   * Updates user role to investor if currently none and activates user
+   * @param user - User entity
+   * @returns Updated user entity if updated, null otherwise
+   */
+  async updateUserRoleToInvestorIfNeeded(user: User): Promise<User | null> {
+    if (user.workRole === WorkRole.NONE) {
+      user.workRole = WorkRole.INVESTOR;
+    }
+    user.status = UserStatus.ACTIVE;
+    return await this.saveUser(user);
   }
 }

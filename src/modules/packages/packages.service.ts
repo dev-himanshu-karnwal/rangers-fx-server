@@ -35,4 +35,27 @@ export class PackagesService {
 
     return ApiResponse.success('Package retrieved successfully', { package: PackageResponseDto.fromEntity(pkg) });
   }
+
+  /**
+   * Gets a package entity by id (for internal use)
+   * @param id - Package ID
+   * @returns Package entity or null
+   */
+  async getPackageEntity(id: number): Promise<Package | null> {
+    return await this.packageRepository.findOneBy({ id });
+  }
+
+  /**
+   * Gets a package entity by id or throws if not found
+   * @param id - Package ID
+   * @returns Package entity
+   * @throws NotFoundException if package not found
+   */
+  async getPackageEntityOrThrow(id: number): Promise<Package> {
+    const pkg = await this.getPackageEntity(id);
+    if (!pkg) {
+      throw new NotFoundException('Package not found');
+    }
+    return pkg;
+  }
 }

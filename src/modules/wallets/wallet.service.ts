@@ -123,4 +123,19 @@ export class WalletService {
   async saveWallet(wallet: Wallet): Promise<Wallet> {
     return await this.walletRepository.save(wallet);
   }
+
+  /**
+   * Transfers amount between two wallets and saves both
+   * @param fromWallet - Source wallet (will be decreased)
+   * @param toWallet - Destination wallet (will be increased)
+   * @param amount - Amount to transfer
+   * @returns Promise that resolves when both wallets are saved
+   */
+  async transferBetweenWallets(fromWallet: Wallet, toWallet: Wallet, amount: number): Promise<void> {
+    fromWallet.balance -= amount;
+    toWallet.balance += amount;
+
+    await this.saveWallet(fromWallet);
+    await this.saveWallet(toWallet);
+  }
 }

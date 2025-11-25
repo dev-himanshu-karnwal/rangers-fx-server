@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UpdateUserDto, UserResponseDto } from '../dto';
+import { UserStatus } from '../enums/user.enum';
 
 /**
  * User Update Service - handles user update operations
@@ -42,10 +43,19 @@ export class UserUpdateService {
 
     // Update user fields
     Object.assign(user, updateUserDto);
-    const updatedUser = await this.userRepository.save(user);
+    const updatedUser = await this.saveUser(user);
 
     this.logger.log(`User updated: ${id}`);
     return UserResponseDto.fromEntity(updatedUser);
+  }
+
+  /**
+   * Save user
+   * @param user - User to save
+   * @returns Saved user
+   */
+  async saveUser(user: User): Promise<User> {
+    return await this.userRepository.save(user);
   }
 
   /**
@@ -59,5 +69,15 @@ export class UserUpdateService {
   async updatePersonalDetails(updateUserDto: UpdateUserDto, currentUser: User): Promise<{ user: UserResponseDto }> {
     const updatedUser = await this.update(currentUser.id, updateUserDto);
     return { user: new UserResponseDto(updatedUser) };
+  }
+
+  /**
+   * Inactivates a user by setting status to INACTIVE
+   * @param user - User entity to inactivate
+   * @returns Updated user entity
+   */
+  async inactivateUser(user: User): Promise<User> {
+    user.status = UserStatus.INACTIVE;
+    return await this.saveUser(user);
   }
 }

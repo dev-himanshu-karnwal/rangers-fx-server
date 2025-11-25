@@ -102,6 +102,64 @@ export class BotsService {
   }
 
   /**
+   * Saves a bot activation by updating its entity.
+   * @param botActivation - Bot activation to save
+   * @returns Updated bot activation
+   */
+  async saveBot(botActivation: BotActivation): Promise<BotActivation> {
+    return await this.botActivationRepository.save(botActivation);
+  }
+
+  /**
+   * Expires a bot activation by setting its status to EXPIRED.
+   * @param botActivation - Bot activation to expire
+   * @returns Updated bot activation
+   */
+  async expireBot(botActivation: BotActivation): Promise<BotActivation> {
+    botActivation.status = BotActivationStatus.EXPIRED;
+    return await this.botActivationRepository.save(botActivation);
+  }
+
+  /**
+   * Updates bot max income by adding the investment amount
+   * @param botActivation - Bot activation to update
+   * @param investmentAmount - Investment amount to add to max income
+   * @returns Updated bot activation
+   */
+  async updateBotMaxIncome(botActivation: BotActivation, investmentAmount: number): Promise<BotActivation> {
+    botActivation.maxIncome += investmentAmount;
+    return await this.saveBot(botActivation);
+  }
+
+  /**
+   * Checks if bot is expired based on reference date and expiration period
+   * @param referenceDate - Reference date (bot creation or last package purchase)
+   * @param expirationMonths - Number of months until expiration
+   * @param lastPackageDate - Last package purchase date (null if no packages)
+   * @returns True if expired
+   */
+  isBotExpired(referenceDate: Date, expirationMonths: number, lastPackageDate: Date | null = null): boolean {
+    const expirationDate = new Date(lastPackageDate || referenceDate);
+    expirationDate.setMonth(expirationDate.getMonth() + expirationMonths);
+    return new Date() > expirationDate;
+  }
+
+  /**
+   * Checks if bot was purchased today (ignoring time)
+   * @param botCreatedAt - Bot creation date
+   * @returns True if bot was created today
+   */
+  isBotPurchasedToday(botCreatedAt: Date): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const botDate = new Date(botCreatedAt);
+    botDate.setHours(0, 0, 0, 0);
+
+    return botDate.getTime() === today.getTime();
+  }
+
+  /**
    * Ensures the user does not already have an active bot.
    */
   private async ensureUserHasNoActiveBot(userId: number): Promise<void> {

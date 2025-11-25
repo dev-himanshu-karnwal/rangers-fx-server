@@ -8,10 +8,18 @@ import { Wallet } from '../wallets/entities/wallet.entity';
 import { WalletModule } from '../wallets/wallet.module';
 import { TransactionModule } from '../transactions/transaction.module';
 import { BotsModule } from '../bots/bots.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Package, UserPackage, Wallet]), WalletModule, TransactionModule, BotsModule],
+  imports: [
+    TypeOrmModule.forFeature([Package, UserPackage, Wallet]),
+    WalletModule,
+    TransactionModule,
+    BotsModule,
+    UserModule,
+  ],
   controllers: [PackagesController],
   providers: [PackagesService, UserPackageService],
+  exports: [PackagesService], // Export for use in other modules if needed
 })
 export class PackagesModule {}
