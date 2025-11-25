@@ -263,6 +263,9 @@ export class TransactionService {
    * @throws BadRequestException if the wallet does not have sufficient balance
    */
   async ensureSufficientBalanceWithPendingTransactions(wallet: Wallet, amount: number): Promise<void> {
+    if (wallet.balance < amount) {
+      throw new BadRequestException('Insufficient balance in your wallet');
+    }
     const pendingTransactionsAmount = await this.transactionRepository.sum('amount', {
       fromWalletId: wallet.id,
       status: TransactionStatus.PENDING,

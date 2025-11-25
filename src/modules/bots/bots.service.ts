@@ -88,15 +88,24 @@ export class BotsService {
   }
 
   /**
-   * Ensures the user does not already have an active bot.
+   * Gets the active bot activation for a user.
+   * @param userId - User ID to get the active bot for
+   * @returns BotActivation entity if found, null otherwise
    */
-  private async ensureUserHasNoActiveBot(userId: number): Promise<void> {
-    const existingActivation = await this.botActivationRepository.findOne({
+  async getActiveBotActivation(userId: number): Promise<BotActivation | null> {
+    return await this.botActivationRepository.findOne({
       where: {
         userId,
         status: BotActivationStatus.ACTIVE,
       },
     });
+  }
+
+  /**
+   * Ensures the user does not already have an active bot.
+   */
+  private async ensureUserHasNoActiveBot(userId: number): Promise<void> {
+    const existingActivation = await this.getActiveBotActivation(userId);
 
     if (existingActivation) {
       throw new BadRequestException('You already have an active bot');

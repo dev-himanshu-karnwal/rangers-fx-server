@@ -12,5 +12,6 @@ import { Transaction } from '../transactions/entities';
   imports: [TypeOrmModule.forFeature([BotActivation, Transaction]), WalletModule, TransactionModule, UserModule],
   controllers: [BotsController],
   providers: [BotsService],
+  exports: [BotsService], // Export for use in other modules
 })
 export class BotsModule {}
