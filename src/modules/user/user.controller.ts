@@ -32,11 +32,12 @@ export class UserController {
    * @param email - User Email
    * @returns { user: { id:number, email:string, fullName:string} }
    */
-  @Get('by-email')
+  @Get('email/:email')
   @HttpCode(HttpStatus.OK)
-  async getUserByEmail(@Body() emailDto: EmailVerifyDTO): Promise<ApiResponse<{ user: UserResponseDto }>> {
-    return this.userService.getUserByEmail(emailDto.email);
+  async getUserByEmail(@Param('email') email: string): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userService.getUserByEmail(email);
   }
+
   /**
    * Get user by ID
    * @param id - User ID

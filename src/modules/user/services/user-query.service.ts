@@ -54,6 +54,7 @@ export class UserQueryService {
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
+
     return ApiResponse.success('User fetched successfully', {
       user: new UserResponseDto({
         id: user.id,
