@@ -36,11 +36,37 @@ export class WalletService {
    * @returns ApiResponse containing the user's wallet DTO
    */
   async getUserWallet(userId: number): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
+    const wallet = await this.getUserWalletEntity(userId);
+    return ApiResponse.success('Wallet fetched Successfully.', { wallet: new WalletResponseDto(wallet) });
+  }
+
+  /**
+   * Gets user wallet entity by user ID (for internal operations)
+   * @param userId - User ID
+   * @returns Wallet entity
+   * @throws NotFoundException if wallet not found
+   */
+  async getUserWalletEntity(userId: number): Promise<Wallet> {
     const wallet = await this.walletRepository.findOne({ where: { userId } });
     if (!wallet) {
       throw new NotFoundException(`User with ID ${userId} wallet not found.`);
     }
-    return ApiResponse.success('Wallet fetched Successfully.', { wallet: new WalletResponseDto(wallet) });
+    return wallet;
+  }
+
+  /**
+   * Gets company income wallet entity (for internal operations)
+   * @returns Wallet entity
+   * @throws NotFoundException if wallet not found
+   */
+  async getCompanyIncomeWalletEntity(): Promise<Wallet> {
+    const wallet = await this.walletRepository.findOne({
+      where: { walletType: WalletType.COMPANY_INCOME },
+    });
+    if (!wallet) {
+      throw new NotFoundException('Company income wallet not found.');
+    }
+    return wallet;
   }
 
   private async getCompanyWallet(

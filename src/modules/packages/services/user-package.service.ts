@@ -51,39 +51,60 @@ export class UserPackageService {
     // Get and validate wallets
     const { userWallet, companyIncomeWallet } = await this.getAndValidateWallets(user.id);
 
-    // Validate wallet balance
-    await this.validateWalletBalance(userWallet, purchasePackageDto.investmentAmount);
+    // Validate wallet balance (convert to DTO for transaction service)
+    const userWalletDto = new WalletResponseDto(userWallet);
+    await this.transactionService.ensureSufficientBalanceWithPendingTransactions(
+      userWalletDto,
+      purchasePackageDto.investmentAmount,
+    );
 
     // Get and validate bot
-    const bot = await this.getAndValidateBot(user.id);
+    const bot = await this.botsService.getActiveBotActivation(user.id);
+    if (!bot) {
+      throw new NotFoundException('No active bot activation found for the user');
+    }
 
     // Check bot expiration and validate purchase conditions
-    await this.validateBotForPurchase(bot, user);
+    await this.checkAndExpireBotIfNeeded(bot, user);
+    await this.validatePurchaseConditions(bot);
 
     // Create user package
     const userPackage = await this.createUserPackage(user, pkg, bot, purchasePackageDto.investmentAmount);
 
-    // Process financial transactions
-    await this.processFinancialTransactions(
-      user,
+    // Create transaction record
+    await this.transactionService.createTransaction({
+      fromWalletId: userWallet.id,
+      toWalletId: companyIncomeWallet.id,
+      amount: purchasePackageDto.investmentAmount,
+      description: `Purchase of package ${pkg.title} by ${user.fullName} for ${purchasePackageDto.investmentAmount}`,
+      type: TransactionType.PURCHASE_PACKAGE,
+      status: TransactionStatus.APPROVED,
+      entityId: userPackage.id,
+      initiator: user,
+      statusUpdatedAt: new Date(),
+      statusUpdatedBy: user.id,
+      statusUpdater: user,
+    });
+
+    // Update wallet balances
+    await this.walletService.transferBetweenWallets(
       userWallet,
       companyIncomeWallet,
-      pkg,
       purchasePackageDto.investmentAmount,
-      userPackage.id,
     );
 
     // Update bot max income
-    await this.updateBotMaxIncome(bot, purchasePackageDto.investmentAmount);
+    await this.botsService.updateBotMaxIncome(bot, purchasePackageDto.investmentAmount);
 
     // Update user role if needed
-    await this.updateUserRoleIfNeeded(user);
+    await this.userService.updateUserRoleToInvestorIfNeeded(user);
 
     // Return response with relations
-    return this.buildSuccessResponse(userPackage.id);
+    const userPackageWithRelations = await this.getUserPackageWithRelations(userPackage.id);
+    return ApiResponse.success('Package purchased successfully', {
+      userPackage: UserPackageResponseDto.fromEntity(userPackageWithRelations),
+    });
   }
-
-  // ==================== Validation Methods ====================
 
   /**
    * Validates package exists and investment amount is within valid range
@@ -103,65 +124,18 @@ export class UserPackageService {
   }
 
   /**
-   * Gets and validates user wallet and company income wallet
+   * Gets and validates user wallet and company income wallet entities
    * @param userId - User ID
-   * @returns Object containing user wallet and company income wallet
+   * @returns Object containing user wallet and company income wallet entities
    * @throws NotFoundException if wallets not found
    */
   private async getAndValidateWallets(userId: number): Promise<{
-    userWallet: WalletResponseDto;
-    companyIncomeWallet: WalletResponseDto;
+    userWallet: Wallet;
+    companyIncomeWallet: Wallet;
   }> {
-    const userWalletResponse = await this.walletService.getUserWallet(userId);
-    const userWallet = userWalletResponse.data?.wallet;
-
-    if (!userWallet) {
-      throw new NotFoundException('User wallet not found');
-    }
-
-    const companyIncomeWalletResponse = await this.walletService.getCompanyIncomeWallet();
-    const companyIncomeWallet = companyIncomeWalletResponse.data?.wallet;
-
-    if (!companyIncomeWallet) {
-      throw new NotFoundException('Company income wallet not found');
-    }
-
+    const userWallet = await this.walletService.getUserWalletEntity(userId);
+    const companyIncomeWallet = await this.walletService.getCompanyIncomeWalletEntity();
     return { userWallet, companyIncomeWallet };
-  }
-
-  /**
-   * Validates wallet has sufficient balance considering pending transactions
-   * @param userWallet - User wallet
-   * @param amount - Amount to validate
-   * @throws BadRequestException if insufficient balance
-   */
-  private async validateWalletBalance(userWallet: WalletResponseDto, amount: number): Promise<void> {
-    await this.transactionService.ensureSufficientBalanceWithPendingTransactions(userWallet, amount);
-  }
-
-  /**
-   * Gets and validates active bot for user
-   * @param userId - User ID
-   * @returns Bot activation entity
-   * @throws NotFoundException if no active bot found
-   */
-  private async getAndValidateBot(userId: number): Promise<BotActivation> {
-    const bot = await this.botsService.getActiveBotActivation(userId);
-    if (!bot) {
-      throw new NotFoundException('No active bot activation found for the user');
-    }
-    return bot;
-  }
-
-  /**
-   * Validates bot for purchase: checks expiration and purchase conditions
-   * @param bot - Bot activation
-   * @param user - User entity
-   * @throws BadRequestException if bot expired or purchase conditions not met
-   */
-  private async validateBotForPurchase(bot: BotActivation, user: User): Promise<void> {
-    await this.checkAndExpireBotIfNeeded(bot, user);
-    await this.validatePurchaseConditions(bot);
   }
 
   /**
@@ -177,7 +151,8 @@ export class UserPackageService {
     if (userPackageCount === 0) {
       const isExpired = this.botsService.isBotExpired(bot.createdAt, PACKAGES_CONSTANTS.BOT_EXPIRATION_MONTHS, null);
       if (isExpired) {
-        await this.expireBotAndDeactivateUser(bot, user);
+        await this.botsService.expireBot(bot);
+        await this.userService.deactivateUser(user);
         throw new BadRequestException('Bot has expired. No package was purchased within 3 months of bot activation.');
       }
       return;
@@ -207,8 +182,6 @@ export class UserPackageService {
     }
   }
 
-  // ==================== Package Creation Methods ====================
-
   /**
    * Creates a user package record
    * @param user - User entity
@@ -232,95 +205,6 @@ export class UserPackageService {
     });
 
     return await this.userPackageRepository.save(userPackage);
-  }
-
-  // ==================== Financial Operations Methods ====================
-
-  /**
-   * Processes all financial transactions for package purchase
-   * @param user - User entity
-   * @param userWallet - User wallet
-   * @param companyIncomeWallet - Company income wallet
-   * @param pkg - Package entity
-   * @param amount - Investment amount
-   * @param userPackageId - User package ID for transaction reference
-   */
-  private async processFinancialTransactions(
-    user: User,
-    userWallet: Wallet,
-    companyIncomeWallet: Wallet,
-    pkg: Package,
-    amount: number,
-    userPackageId: number,
-  ): Promise<void> {
-    // Create transaction record
-    await this.createPurchaseTransaction(user, userWallet, companyIncomeWallet, pkg, amount, userPackageId);
-
-    // Update wallet balances
-    await this.walletService.transferBetweenWallets(userWallet, companyIncomeWallet, amount);
-  }
-
-  /**
-   * Creates a transaction record for package purchase
-   * @param user - User entity
-   * @param userWallet - User wallet
-   * @param companyIncomeWallet - Company income wallet
-   * @param pkg - Package entity
-   * @param amount - Investment amount
-   * @param userPackageId - User package ID
-   */
-  private async createPurchaseTransaction(
-    user: User,
-    userWallet: WalletResponseDto,
-    companyIncomeWallet: WalletResponseDto,
-    pkg: Package,
-    amount: number,
-    userPackageId: number,
-  ): Promise<void> {
-    await this.transactionService.createTransaction({
-      fromWalletId: userWallet.id,
-      toWalletId: companyIncomeWallet.id,
-      amount,
-      description: this.buildTransactionDescription(pkg.title, user.fullName, amount),
-      type: TransactionType.PURCHASE_PACKAGE,
-      status: TransactionStatus.APPROVED,
-      entityId: userPackageId,
-      initiator: user,
-      statusUpdatedAt: new Date(),
-      statusUpdatedBy: user.id,
-      statusUpdater: user,
-    });
-  }
-
-  // ==================== Bot Operations Methods ====================
-
-  /**
-   * Updates bot max income with the investment amount
-   * @param bot - Bot activation entity
-   * @param investmentAmount - Investment amount to add
-   */
-  private async updateBotMaxIncome(bot: BotActivation, investmentAmount: number): Promise<void> {
-    await this.botsService.updateBotMaxIncome(bot, investmentAmount);
-  }
-
-  /**
-   * Expires bot and deactivates user
-   * @param bot - Bot activation to expire
-   * @param user - User to deactivate
-   */
-  private async expireBotAndDeactivateUser(bot: BotActivation, user: User): Promise<void> {
-    await this.botsService.expireBot(bot);
-    await this.userService.deactivateUser(user);
-  }
-
-  // ==================== User Operations Methods ====================
-
-  /**
-   * Updates user role to investor if currently none
-   * @param user - User entity
-   */
-  private async updateUserRoleIfNeeded(user: User): Promise<void> {
-    await this.userService.updateUserRoleToInvestorIfNeeded(user);
   }
 
   // ==================== Query Methods ====================
@@ -351,32 +235,5 @@ export class UserPackageService {
     }
 
     return userPackage;
-  }
-
-  // ==================== Utility Methods ====================
-
-  /**
-   * Builds transaction description
-   * @param packageTitle - Package title
-   * @param userName - User full name
-   * @param amount - Investment amount
-   * @returns Transaction description string
-   */
-  private buildTransactionDescription(packageTitle: string, userName: string, amount: number): string {
-    return `Purchase of package ${packageTitle} by ${userName} for ${amount}`;
-  }
-
-  /**
-   * Builds success response with user package
-   * @param userPackageId - User package ID
-   * @returns Success API response
-   */
-  private async buildSuccessResponse(
-    userPackageId: number,
-  ): Promise<ApiResponse<{ userPackage: UserPackageResponseDto }>> {
-    const userPackageWithRelations = await this.getUserPackageWithRelations(userPackageId);
-    return ApiResponse.success('Package purchased successfully', {
-      userPackage: UserPackageResponseDto.fromEntity(userPackageWithRelations),
-    });
   }
 }
