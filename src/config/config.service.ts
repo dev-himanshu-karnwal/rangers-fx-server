@@ -14,10 +14,6 @@ export class ConfigService {
   }
 
   get databaseUrl(): string {
-    console.log(
-      'DATABASE_URL',
-      this.configService.get<string>('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/rangers_fx'),
-    );
     return this.configService.get<string>('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/rangers_fx');
   }
 
