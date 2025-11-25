@@ -9,6 +9,7 @@ import {
   Get,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import {
@@ -24,6 +25,7 @@ import { User } from '../user/entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { Admin } from 'src/common/decorators/admin.decorator';
+import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
 
 /**
  * Transaction controller - handles transaction-related HTTP requests
@@ -54,8 +56,10 @@ export class TransactionController {
    */
   @Get('all')
   @HttpCode(HttpStatus.OK)
-  async getAllTransactions(): Promise<ApiResponse<{ transactions: TransactionResponseDto[] }>> {
-    return this.transactionService.getAllTransactions();
+  async getAllTransactions(
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: TransactionResponseDto[] }>> {
+    return this.transactionService.getAllTransactions(pagination);
   }
 
   /**

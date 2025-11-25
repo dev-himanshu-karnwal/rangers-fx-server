@@ -7,8 +7,8 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-  Post,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ChangeMailDto, EmailVerifyDTO, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
@@ -17,6 +17,7 @@ import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
+import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -123,8 +124,9 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async getDirectChildernOfUserbyId(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
-    return await this.userService.findDirectChildrenOfUserById(id);
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: UserResponseDto[] }>> {
+    return await this.userService.findDirectChildrenOfUserById(id, pagination);
   }
 
   /**

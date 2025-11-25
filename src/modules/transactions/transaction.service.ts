@@ -15,6 +15,8 @@ import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
 import { ApiResponse } from 'src/common/response/api.response';
 import { Wallet } from '../wallets/entities/wallet.entity';
+import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { PaginationHelper } from '../../common/pagination/pagination.helper';
 
 /**
  * TransactionService provides business logic for handling transactions such as creation,
@@ -45,13 +47,22 @@ export class TransactionService {
    * - Orders results by `createdAt` descending.
    * @returns ApiResponse containing an array of TransactionResponseDto
    */
-  async getAllTransactions(): Promise<ApiResponse<{ transactions: TransactionResponseDto[] }>> {
-    const transactions = await this.transactionRepository.find({
+  async getAllTransactions(
+    pagination?: PaginationQueryDto,
+  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: TransactionResponseDto[] }>> {
+    const { skip, take, order } = PaginationHelper.build(pagination ?? new PaginationQueryDto());
+    // Preserve existing relations and logic while adding pagination & dynamic ordering
+    const [transactions, total] = await this.transactionRepository.findAndCount({
       relations: ['toWallet', 'fromWallet', 'initiator', 'statusUpdater'],
-      order: { createdAt: 'DESC' },
+      order,
+      skip,
+      take,
     });
     return ApiResponse.success('Transactions retrieved successfully', {
-      transactions: transactions.map((transactions) => TransactionResponseDto.fromEntity(transactions)),
+      total,
+      page: pagination?.page ?? 1,
+      limit: pagination?.limit ?? 10,
+      data: transactions.map((t) => TransactionResponseDto.fromEntity(t)),
     });
   }
 

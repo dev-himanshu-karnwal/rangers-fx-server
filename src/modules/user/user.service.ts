@@ -14,6 +14,8 @@ import { OtpService } from '../otp/otp.service';
 import { OtpPurpose } from '../otp/enums';
 import { EmailService } from 'src/core/services/email/email.service';
 import { ConfigService } from 'src/config/config.service';
+import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { PaginationHelper } from '../../common/pagination/pagination.helper';
 
 /**
  * User service handling business logic for user operations
@@ -137,13 +139,22 @@ export class UserService {
    * @param id - The ID of the parent/referrer user.
    * @returns A list of User entities or null if no referrals exist.
    */
-  async findDirectChildrenOfUserById(id: number): Promise<ApiResponse<{ users: UserResponseDto[] }>> {
-    const directChildren = await this.userRepository.find({ where: { referredByUserId: id } });
+  async findDirectChildrenOfUserById(
+    id: number,
+    pagination?: PaginationQueryDto,
+  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: UserResponseDto[] }>> {
+    const baseWhere = { referredByUserId: id };
+    const { skip, take, order } = PaginationHelper.build(pagination ?? new PaginationQueryDto());
+
+    const [directChildren, total] = await this.userRepository.findAndCount({ where: baseWhere, skip, take, order });
     if (directChildren.length === 0) {
       throw new NotFoundException(`Direct Children not found for ${id} User Id`);
     }
     return ApiResponse.success('Direct Children fetched Successfully.', {
-      users: directChildren.map((user) => UserResponseDto.fromEntity(user)),
+      total,
+      page: pagination?.page ?? 1,
+      limit: pagination?.limit ?? 10,
+      data: directChildren.map((user) => UserResponseDto.fromEntity(user)),
     });
   }
 
