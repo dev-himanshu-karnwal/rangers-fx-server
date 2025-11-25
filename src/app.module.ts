@@ -13,6 +13,8 @@ import { EmailModule } from './core/services/email/email.module';
 import { TransactionModule } from './modules/transactions/transaction.module';
 import { BotsModule } from './modules/bots/bots.module';
 import { PackagesModule } from './modules/packages/packages.module';
+import path from 'path';
+import fs from 'fs';
 
 @Module({
   imports: [
@@ -26,7 +28,11 @@ import { PackagesModule } from './modules/packages/packages.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.isDevelopment,
         logging: false,
-        ssl: configService.isProduction,
+        ssl: configService.isProduction
+          ? {
+              ca: fs.readFileSync(path.join(process.cwd(), 'certs/cert.crt'), 'utf-8').toString(),
+            }
+          : false,
       }),
       inject: [ConfigService],
     }),
