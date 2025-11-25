@@ -1,11 +1,5 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { UserService } from '../user/user.service';
+import { Injectable } from '@nestjs/common';
 import { User } from '../user/entities/user.entity';
-import { EmailService } from '../../core/services/email/email.service';
-import { ConfigService } from '../../config/config.service';
-import { OtpService } from '../otp/otp.service';
 import {
   LoginInitiateDto,
   CompleteLoginDto,
@@ -16,28 +10,25 @@ import {
   VerifyOtpDto,
   CompleteSignupDto,
 } from './dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { OtpPurpose } from '../otp/enums/otp.enum';
 import { ApiResponse } from 'src/common/response/api.response';
 import type { Response } from 'express';
-import { UserStatus } from '../user/enums/user.enum';
-import { UserResponseDto } from '../user/dto';
+import { AuthLoginService, AuthPasswordResetService, AuthSignupService, AuthTokenService } from './services';
 
 /**
- * Auth service handling authentication and authorization logic
- * Follows Single Responsibility Principle - handles auth-related business logic only
+ * Auth Service - Orchestrator class that coordinates all authentication-related operations
+ * Follows Single Responsibility Principle - orchestrates auth operations by delegating to specialized services
+ * This is the main entry point for all auth service consumers
  */
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
-    private readonly userService: UserService,
-    private readonly jwtService: JwtService,
-    private readonly emailService: EmailService,
-    private readonly configService: ConfigService,
-    private readonly otpService: OtpService,
+    private readonly authLoginService: AuthLoginService,
+    private readonly authPasswordResetService: AuthPasswordResetService,
+    private readonly authSignupService: AuthSignupService,
+    private readonly authTokenService: AuthTokenService,
   ) {}
+
+  // ==================== Login Operations ====================
 
   /**
    * Step 1: Initiate login - send OTP to email
@@ -45,89 +36,29 @@ export class AuthService {
    * @returns Success response without user data
    */
   async loginInitiate(loginInitiateDto: LoginInitiateDto): Promise<ApiResponse<null>> {
-    // Find user by email
-    const user = await this.userService.findByEmail(loginInitiateDto.email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check if user is verified (status should not be unverified)
-    if (user.status === UserStatus.UNVERIFIED) {
-      throw new BadRequestException('User email not verified');
-    }
-
-    // Check if user has a password (user must have completed signup)
-    if (!user.passwordHash) {
-      throw new BadRequestException('User signup not completed');
-    }
-
-    // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.LOGIN);
-    if (this.configService.isProduction) {
-      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
-    }
-
-    this.logger.log(`Login OTP sent to user: ${user.email}`);
-
-    return ApiResponse.success('OTP Sent Successfully.', null);
-  }
-
-  /**
-   * Logut service
-   */
-  logout(res: Response): ApiResponse<null> {
-    res.clearCookie(this.configService.authTokenCookieKey, {
-      httpOnly: true,
-      secure: this.configService.isProduction,
-      sameSite: this.configService.isProduction ? 'strict' : 'lax',
-      path: '/', // must match exactly
-    });
-    return ApiResponse.success('Logout Successfully.');
+    return this.authLoginService.loginInitiate(loginInitiateDto);
   }
 
   /**
    * Step 3: Complete login - authenticate with email and password
    * @param completeLoginDto - Complete login data (email, password)
+   * @param res - Express response object for setting cookies
    * @returns Authentication response with token and user
    */
   async completeLogin(completeLoginDto: CompleteLoginDto, res: Response): Promise<ApiResponse<AuthResponseDto>> {
-    // Find user by email with password
-    const user = await this.userService.findByEmailWithPassword(completeLoginDto.email);
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Check if a LOGIN OTP still exists for this user
-    const existingLoginOtp = await this.otpService.findActiveOtp(user.email, OtpPurpose.LOGIN);
-    if (existingLoginOtp) {
-      throw new BadRequestException('An active login OTP still exists. Please use the OTP or wait until it expires.');
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(completeLoginDto.password, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Password is Invalid.');
-    }
-
-    // Generate JWT token
-    const accessToken = this.generateToken(user);
-
-    // Storing jwt in cookie
-    this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
-
-    // Get user DTO for response
-    const userResponse = await this.userService.findOne(user.id);
-
-    this.logger.log(`User logged in: ${user.email}`);
-
-    return ApiResponse.success(
-      'Login Successfull',
-      new AuthResponseDto({
-        accessToken,
-        user: userResponse,
-      }),
-    );
+    return this.authLoginService.completeLogin(completeLoginDto, res);
   }
+
+  /**
+   * Logout service - clears authentication cookie
+   * @param res - Express response object
+   * @returns Success response
+   */
+  logout(res: Response): ApiResponse<null> {
+    return this.authLoginService.logout(res);
+  }
+
+  // ==================== Password Reset Operations ====================
 
   /**
    * Initiate password reset process - send OTP
@@ -135,20 +66,7 @@ export class AuthService {
    * @returns Success response without user data
    */
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ApiResponse<null>> {
-    const user = await this.userService.findByEmail(forgotPasswordDto.email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(user.email, OtpPurpose.FORGOT_PASSWORD);
-    if (this.configService.isProduction) {
-      await this.emailService.sendVerificationEmail(user.email, user.fullName, otpCode);
-    }
-
-    this.logger.log(`Forgot password OTP sent to user: ${user.email}`);
-
-    return ApiResponse.success('Otp Sent Successfully.', null);
+    return this.authPasswordResetService.forgotPassword(forgotPasswordDto);
   }
 
   /**
@@ -156,26 +74,10 @@ export class AuthService {
    * @param resetPasswordDto - User email and new password
    */
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
-    // Find user
-    const user = await this.userService.findByEmail(resetPasswordDto.userEmail);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check if a FORGOT_PASSWORD OTP still exists for this user (same as login check)
-    const existingForgotPasswordOtp = await this.otpService.findActiveOtp(
-      resetPasswordDto.userEmail,
-      OtpPurpose.FORGOT_PASSWORD,
-    );
-    if (existingForgotPasswordOtp) {
-      throw new BadRequestException('An active forgot password OTP still exists. Please verify the OTP first.');
-    }
-
-    // Update password
-    await this.userService.updatePassword(user.id, resetPasswordDto.newPassword);
-
-    this.logger.log(`Password reset successful for user: ${resetPasswordDto.userEmail}`);
+    return this.authPasswordResetService.resetPassword(resetPasswordDto);
   }
+
+  // ==================== Signup Operations ====================
 
   /**
    * Step 1: Initiate signup - create user without password, send OTP
@@ -183,29 +85,7 @@ export class AuthService {
    * @returns Success response without user data
    */
   async signupInitiate(signupInitiateDto: SignupInitiateDto): Promise<ApiResponse<null>> {
-    // Delete OTPs for existing unverified user (if any) before creating new user
-    const existingUser = await this.userService.findByEmail(signupInitiateDto.email);
-    if (existingUser && existingUser.status === UserStatus.UNVERIFIED) {
-      await this.otpService.deleteAllOtpForUser(existingUser.email);
-    }
-
-    // Create unverified user (UserService handles validation and cleanup)
-    const savedUser = await this.userService.createUnverifiedUser(
-      signupInitiateDto.email,
-      signupInitiateDto.fullName,
-      signupInitiateDto.referredByUserId,
-    );
-
-    // Generate and send OTP
-    const otpCode = await this.otpService.generateOtp(savedUser.email, OtpPurpose.SIGNUP);
-
-    if (this.configService.isProduction) {
-      await this.emailService.sendVerificationEmail(savedUser.email, savedUser.fullName, otpCode);
-    }
-
-    this.logger.log(`Signup initiated for user: ${savedUser.email}`);
-
-    return ApiResponse.success('OTP Sent Successfully.');
+    return this.authSignupService.signupInitiate(signupInitiateDto);
   }
 
   /**
@@ -214,77 +94,20 @@ export class AuthService {
    * @returns Success message
    */
   async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<ApiResponse<null>> {
-    // Verify user exists
-    if (verifyOtpDto.purpose !== OtpPurpose.VERIFY) {
-      const user = await this.userService.findByEmail(verifyOtpDto.userEmail);
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-    }
-
-    // Match OTP
-    const { isMatched, message } = await this.otpService.matchOtp(
-      verifyOtpDto.userEmail,
-      verifyOtpDto.otp,
-      verifyOtpDto.purpose,
-    );
-
-    if (!isMatched) {
-      throw new BadRequestException(message);
-    }
-
-    // Mark user as verified
-    await this.userService.verifyUser(verifyOtpDto.userEmail);
-
-    this.logger.log(`OTP verified for user: ${verifyOtpDto.userEmail}, purpose: ${verifyOtpDto.purpose}`);
-
-    return ApiResponse.success(message, null);
+    return this.authSignupService.verifyOtp(verifyOtpDto);
   }
 
   /**
    * Step 3: Complete signup - set password, generate referral code, verify user
    * @param completeSignupDto - Complete signup data (userEmail, password)
+   * @param res - Express response object for setting cookies
    * @returns Authentication response with token and user
    */
   async completeSignup(completeSignupDto: CompleteSignupDto, res: Response): Promise<ApiResponse<AuthResponseDto>> {
-    // Complete user signup (UserService handles password, referral code, wallet, closure)
-    const updatedUser = await this.userService.completeUserSignup(
-      completeSignupDto.userEmail,
-      completeSignupDto.password,
-    );
-
-    // Generate JWT token
-    const accessToken = this.generateToken(updatedUser);
-
-    // Storing jwt in cookie
-    this.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
-
-    // Get user DTO for response
-    const userResponse = await this.userService.findOne(updatedUser.id);
-    await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
-
-    //Updating parent
-    if (userResponse.referredByUserId) {
-      const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId);
-      if (existingParent) {
-        const updateUserDto = new UserResponseDto({
-          ...existingParent,
-          hasChildren: true,
-        });
-        await this.userService.update(existingParent.id, updateUserDto);
-      }
-    }
-
-    this.logger.log(`Signup completed for user: ${updatedUser.email}`);
-
-    return ApiResponse.success(
-      'Registration completed successfully',
-      new AuthResponseDto({
-        accessToken,
-        user: userResponse,
-      }),
-    );
+    return this.authSignupService.completeSignup(completeSignupDto, res);
   }
+
+  // ==================== Token Operations ====================
 
   /**
    * Validate user for JWT strategy
@@ -292,36 +115,6 @@ export class AuthService {
    * @returns User entity
    */
   async validateUser(userId: number): Promise<User> {
-    const user = await this.userService.findByIdEntity(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
-  }
-
-  /**
-   * Generate JWT token for user
-   * @param user - User entity
-   * @returns JWT token string
-   */
-  private generateToken(user: User): string {
-    const payload: JwtPayload = {
-      id: user.id,
-    };
-
-    const expiresIn = this.configService.jwtExpiresIn;
-    return this.jwtService.sign(payload, {
-      expiresIn,
-    } as any);
-  }
-
-  private storeValueInCookie(res: Response, key: string, value: string): void {
-    res.cookie(key, value, {
-      httpOnly: true,
-      secure: this.configService.isProduction, // Only secure in production (HTTPS required)
-      sameSite: this.configService.isProduction ? 'strict' : 'lax', // More flexible in development
-      maxAge: this.configService.cookieMaxAge,
-      path: '/', // Ensure cookie is available for all paths
-    });
+    return this.authTokenService.validateUser(userId);
   }
 }
