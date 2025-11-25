@@ -8,12 +8,12 @@ export class PackagesController {
   constructor(private readonly packagesService: PackagesService) {}
 
   @Get()
-  async getAll(): Promise<ApiResponse<PackageResponseDto[]>> {
+  async getAll(): Promise<ApiResponse<{ packages: PackageResponseDto[] }>> {
     return this.packagesService.getAll();
   }
 
   @Get(':id')
-  async getById(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<PackageResponseDto>> {
+  async getById(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<{ package: PackageResponseDto }>> {
     return this.packagesService.getById(id);
   }
 }

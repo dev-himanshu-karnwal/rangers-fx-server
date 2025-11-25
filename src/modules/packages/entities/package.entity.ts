@@ -21,9 +21,9 @@ export class Package {
     nullable: false,
     name: 'min_price',
     transformer: decimalTransformer,
+    default: 100,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(100)
   minPrice: number;
 
   @Column({
@@ -33,9 +33,9 @@ export class Package {
     nullable: false,
     name: 'max_price',
     transformer: decimalTransformer,
+    default: 20000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(20000)
   maxPrice: number;
 
   @Column({ type: 'int', nullable: false })
@@ -72,13 +72,13 @@ export class Package {
     type: 'decimal',
     precision: 5,
     scale: 2,
-    nullable: true,
+    nullable: false,
     name: 'return_capital',
     transformer: decimalTransformer,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  returnCapital?: number | null; // e.g., 2.0, 2.5, etc.
+  returnCapital: number; // e.g., 2.0, 2.5, etc.
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

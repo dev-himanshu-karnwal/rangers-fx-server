@@ -15,32 +15,24 @@ export class PackagesService {
   /**
    * Gets all packages
    */
-  async getAll(): Promise<ApiResponse<PackageResponseDto[]>> {
-    const packages = await this.packageRepository.find({
-      order: {
-        id: 'ASC',
-      },
+  async getAll(): Promise<ApiResponse<{ packages: PackageResponseDto[] }>> {
+    const packages = await this.packageRepository.find();
+
+    return ApiResponse.success('Packages retrieved successfully', {
+      packages: packages.map(PackageResponseDto.fromEntity),
     });
-
-    const packageDtos = packages.map((pkg) => PackageResponseDto.fromEntity(pkg));
-
-    return ApiResponse.success('Packages retrieved successfully', packageDtos);
   }
 
   /**
    * Gets a package by id
    */
-  async getById(id: number): Promise<ApiResponse<PackageResponseDto>> {
-    const pkg = await this.packageRepository.findOne({
-      where: { id },
-    });
+  async getById(id: number): Promise<ApiResponse<{ package: PackageResponseDto }>> {
+    const pkg = await this.packageRepository.findOneBy({ id });
 
     if (!pkg) {
       throw new NotFoundException('Package not found');
     }
 
-    const packageDto = PackageResponseDto.fromEntity(pkg);
-
-    return ApiResponse.success('Package retrieved successfully', packageDto);
+    return ApiResponse.success('Package retrieved successfully', { package: PackageResponseDto.fromEntity(pkg) });
   }
 }
