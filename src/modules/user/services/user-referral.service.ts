@@ -9,7 +9,7 @@ import { USER_CONSTANTS } from '../constants/user.constants';
  * Follows Single Responsibility Principle - handles referral-related logic only
  */
 @Injectable()
-export class ReferralService {
+export class UserReferralService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,

@@ -2,7 +2,16 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { ReferralService } from './services/referral.service';
+import {
+  UserReferralService,
+  UserQueryService,
+  UserPasswordService,
+  UserEmailService,
+  UserSignupService,
+  UserVerificationService,
+  UserResetTokenService,
+  UserUpdateService,
+} from './services';
 import { User } from './entities/user.entity';
 import { ClosureModule } from './closure/closure.module';
 import { WalletModule } from '../wallets/wallet.module';
@@ -12,7 +21,7 @@ import { ConfigModule } from 'src/config/config.module';
 
 /**
  * User module - handles user-related operations
- * Exports UserService and ReferralService for use in other modules (e.g., AuthModule)
+ * Exports UserService and UserReferralService for use in other modules (e.g., AuthModule)
  */
 @Module({
   imports: [
@@ -24,7 +33,17 @@ import { ConfigModule } from 'src/config/config.module';
     ConfigModule,
   ],
   controllers: [UserController],
-  providers: [UserService, ReferralService],
-  exports: [UserService, ReferralService], // Export for AuthModule
+  providers: [
+    UserService,
+    UserReferralService,
+    UserQueryService,
+    UserPasswordService,
+    UserEmailService,
+    UserSignupService,
+    UserVerificationService,
+    UserResetTokenService,
+    UserUpdateService,
+  ],
+  exports: [UserService, UserReferralService],
 })
 export class UserModule {}
