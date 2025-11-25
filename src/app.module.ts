@@ -20,27 +20,14 @@ import { PackagesModule } from './modules/packages/packages.module';
     EmailModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        console.log(
-          'configService',
-          configService.dbHost,
-          configService.dbPort,
-          configService.dbUsername,
-          configService.dbPassword,
-          configService.dbName,
-        );
-        return {
-          type: 'postgres',
-          host: configService.dbHost,
-          port: configService.dbPort,
-          username: configService.dbUsername,
-          password: configService.dbPassword,
-          database: configService.dbName,
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: configService.isDevelopment,
-          logging: false,
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.databaseUrl,
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: configService.isDevelopment,
+        logging: false,
+        ssl: configService.isProduction,
+      }),
       inject: [ConfigService],
     }),
     UserModule,

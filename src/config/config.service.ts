@@ -13,24 +13,12 @@ export class ConfigService {
     return this.configService.get<string>('NODE_ENV', 'development');
   }
 
-  get dbHost(): string {
-    return this.configService.get<string>('DB_HOST', 'localhost');
-  }
-
-  get dbPort(): number {
-    return Number(this.configService.get<string>('DB_PORT', '5432'));
-  }
-
-  get dbUsername(): string {
-    return this.configService.get<string>('DB_USERNAME', 'postgres');
-  }
-
-  get dbPassword(): string {
-    return this.configService.get<string>('DB_PASSWORD', 'postgres');
-  }
-
-  get dbName(): string {
-    return this.configService.get<string>('DB_NAME', 'rangers_fx');
+  get databaseUrl(): string {
+    console.log(
+      'DATABASE_URL',
+      this.configService.get<string>('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/rangers_fx'),
+    );
+    return this.configService.get<string>('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/rangers_fx');
   }
 
   get isDevelopment(): boolean {
