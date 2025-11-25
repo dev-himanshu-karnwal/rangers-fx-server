@@ -11,7 +11,7 @@
     "start": "NODE_ENV=development nest start",
     "start:dev": "set NODE_ENV=development&& nest start --watch",
     "start:debug": "NODE_ENV=development nest start --debug --watch",
-    "start:prod": "NODE_ENV=production node dist/main",
+    "start:prod": "NODE_ENV=production node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "prepare": "husky",
     "seed:development": "ts-node database/seeds/seed.development.ts",
