@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { IsInt, IsNumber, IsEnum, IsString, Min, Max } from 'class-validator';
+import { IsInt, IsNumber, IsEnum, IsString, Min, Max, MinLength, MaxLength, IsOptional } from 'class-validator';
 import { PackageType } from '../enums';
 import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
 
@@ -12,6 +12,8 @@ export class Package {
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   @IsString()
+  @MinLength(2, { message: 'Title must be at least 2 characters long' })
+  @MaxLength(255, { message: 'Title cannot exceed 255 characters' })
   title: string;
 
   @Column({
@@ -24,6 +26,7 @@ export class Package {
     default: 100,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(100, { message: 'minPrice must be at least 100' })
   minPrice: number;
 
   @Column({
@@ -36,11 +39,12 @@ export class Package {
     default: 20000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(20000, { message: 'maxPrice must be at least 20000' })
   maxPrice: number;
 
   @Column({ type: 'int', nullable: false })
   @IsInt()
-  @Min(1)
+  @Min(1, { message: 'Months must be at least 1' })
   months: number;
 
   @Column({
@@ -48,7 +52,7 @@ export class Package {
     enum: PackageType,
     nullable: false,
   })
-  @IsEnum(PackageType)
+  @IsEnum(PackageType, { message: 'Invalid package type' })
   type: PackageType;
 
   @Column({ type: 'text', nullable: false })
@@ -63,9 +67,10 @@ export class Package {
     name: 'return_percentage',
     transformer: decimalTransformer,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Max(100)
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'returnPercentage must have at most 2 decimal places' })
+  @Min(0, { message: 'returnPercentage cannot be negative' })
+  @Max(100, { message: 'returnPercentage cannot exceed 100' })
   returnPercentage?: number | null; // Only for monthly packages
 
   @Column({
@@ -76,9 +81,10 @@ export class Package {
     name: 'return_capital',
     transformer: decimalTransformer,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  returnCapital: number; // e.g., 2.0, 2.5, etc.
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'returnCapital must have at most 2 decimal places' })
+  @Min(0, { message: 'returnCapital cannot be negative' })
+  returnCapital?: number | null; // e.g., 2.0, 2.5, etc.
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

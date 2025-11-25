@@ -8,6 +8,7 @@ import {
   JoinColumn,
   OneToMany,
   Index,
+  Check,
 } from 'typeorm';
 import { UserStatus, UserRole, WorkRole } from '../enums/user.enum';
 
@@ -31,6 +32,7 @@ export class User {
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
+  @Check(`"mobileNumber" IS NULL OR "mobileNumber" ~ '^[0-9+]{7,20}$'`)
   mobileNumber: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_hash' })
@@ -47,6 +49,7 @@ export class User {
 
   @Column({ type: 'varchar', length: 64, unique: true, nullable: true, name: 'referral_code' })
   @Index()
+  @Check(`"referral_code" IS NULL OR "referral_code" ~ '^[A-Za-z0-9]{6,64}$'`)
   referralCode: string | null;
 
   @Column({ type: 'int', name: 'referred_by_user_id', nullable: true })

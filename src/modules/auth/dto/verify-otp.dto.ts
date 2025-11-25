@@ -1,4 +1,4 @@
-import { IsDefined, IsNotEmpty, IsEmail, IsString, IsEnum } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsEmail, IsString, IsEnum, MaxLength, MinLength } from 'class-validator';
 import { OtpPurpose } from '../../otp/enums/otp.enum';
 
 /**
@@ -9,6 +9,8 @@ export class VerifyOtpDto {
   @IsDefined()
   @IsNotEmpty()
   @IsEmail()
+  @MinLength(2, { message: 'Email must be at least 2 characters long' })
+  @MaxLength(255, { message: 'Email must not exceed 255 characters' })
   userEmail: string;
 
   @IsDefined()

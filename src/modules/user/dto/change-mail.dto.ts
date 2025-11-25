@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsString, Matches, MaxLength } from 'class-validator';
 
 /**
  * DTO for initiating and completing an email change.
@@ -7,5 +7,9 @@ import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class ChangeMailDto {
   @IsString()
   @IsEmail()
+  @MaxLength(255)
+  @Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: 'Email format is invalid',
+  })
   email: string;
 }

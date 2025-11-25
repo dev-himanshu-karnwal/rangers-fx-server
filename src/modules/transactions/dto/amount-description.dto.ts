@@ -1,4 +1,15 @@
-import { IsDefined, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsDefined,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  isPositive,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 /**
@@ -10,9 +21,11 @@ export class AmountDescriptionDto {
   @IsNumber()
   @Min(1)
   @Max(TRANSACTION_CONSTANTS.MAX_AMOUNT)
+  @IsPositive()
   amount: number;
 
   @IsString()
   @IsOptional()
+  @MaxLength(1000) // matches DB column length
   description?: string | null;
 }

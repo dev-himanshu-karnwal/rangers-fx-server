@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Check,
 } from 'typeorm';
 import { TransactionStatus, TransactionType } from '../enums/transaction.enum';
 import { Wallet } from '../../wallets/entities/wallet.entity';
@@ -20,6 +21,8 @@ import { decimalTransformer } from 'src/common/transformers/decimal.transformer'
 @Index('idx_transaction_id_status', ['id', 'status'])
 @Index('idx_transaction_status_fromwalletid', ['status', 'fromWalletId'])
 @Entity('transactions')
+@Check(`"amount" > 0`) // -- amount must always be positive
+@Check(`"from_wallet_id" IS NULL OR "to_wallet_id" IS NULL OR "from_wallet_id" <> "to_wallet_id"`) // -- prevent transferring money to the same wallet
 export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;

@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Check,
 } from 'typeorm';
 import { WalletType } from '../enums/wallet.enum';
 import { User } from '../../user/entities/user.entity';
@@ -19,6 +20,8 @@ import { decimalTransformer } from 'src/common/transformers/decimal.transformer'
 @Entity('wallets')
 @Index('idx_wallet_user_id', ['userId'])
 @Index('idx_wallet_type', ['walletType'])
+@Check(`"balance" >= 0`) // -- prevent negative wallet balance
+@Check(`"currency" ~ '^[A-Z]{3,10}$'`) // -- enforce uppercase currency codes (USDT, USDC, BTC, etc.)
 export class Wallet {
   @PrimaryGeneratedColumn()
   id: number;

@@ -1,4 +1,4 @@
-import { IsDefined, IsNotEmpty, IsEmail } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsEmail, MaxLength } from 'class-validator';
 
 /**
  * DTO for initiating user login (Step 1)
@@ -8,5 +8,6 @@ export class LoginInitiateDto {
   @IsDefined()
   @IsNotEmpty()
   @IsEmail()
+  @MaxLength(255)
   email: string;
 }
