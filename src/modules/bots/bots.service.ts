@@ -88,6 +88,21 @@ export class BotsService {
   }
 
   /**
+   * Gets the active bot activation for a user and returns it as a DTO.
+   * @param user - User to get the active bot for
+   * @returns BotActivation entity if found, null otherwise
+   */
+  async getActiveBot(user: User): Promise<ApiResponse<{ botActivation: BotActivationResponseDto }>> {
+    const botActivation = await this.getActiveBotActivation(user.id);
+    if (!botActivation) {
+      throw new NotFoundException('No active bot activation found for the user');
+    }
+    return ApiResponse.success('Active bot activation found', {
+      botActivation: BotActivationResponseDto.fromEntity(botActivation),
+    });
+  }
+
+  /**
    * Gets the active bot activation for a user.
    * @param userId - User ID to get the active bot for
    * @returns BotActivation entity if found, null otherwise
@@ -121,13 +136,13 @@ export class BotsService {
   }
 
   /**
-   * Updates bot max income by adding the investment amount
+   * Updates bot max income by adding the increase in max income
    * @param botActivation - Bot activation to update
-   * @param investmentAmount - Investment amount to add to max income
+   * @param increaseInMaxIncome - Increase in max income
    * @returns Updated bot activation
    */
-  async updateBotMaxIncome(botActivation: BotActivation, investmentAmount: number): Promise<BotActivation> {
-    botActivation.maxIncome += investmentAmount;
+  async updateBotMaxIncome(botActivation: BotActivation, increaseInMaxIncome: number): Promise<BotActivation> {
+    botActivation.maxIncome = (botActivation.maxIncome || 0) + increaseInMaxIncome;
     return await this.saveBot(botActivation);
   }
 

@@ -12,6 +12,7 @@ import { User } from 'src/modules/user/entities/user.entity';
 import { Package } from './package.entity';
 import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
 import { BotActivation } from 'src/modules/bots/entities/bot-activation.entity';
+import { UserPackageStatus } from '../enums/user-package-status.enum';
 
 @Entity('user_packages')
 @Index('idx_user_packages_user_id', ['userId'])
@@ -58,6 +59,14 @@ export class UserPackage {
     name: 'purchase_date',
   })
   purchaseDate: Date;
+
+  @Column({
+    type: 'enum',
+    enum: UserPackageStatus,
+    nullable: false,
+    default: UserPackageStatus.INPROGRESS,
+  })
+  status: UserPackageStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -17,6 +17,7 @@ import { UserService } from 'src/modules/user/user.service';
 import { PackagesService } from '../packages.service';
 import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
+import { UserPackageStatus } from '../enums';
 
 /**
  * User Package Service - handles user package purchase operations
@@ -33,6 +34,28 @@ export class UserPackageService {
     private readonly botsService: BotsService,
     private readonly userService: UserService,
   ) {}
+
+  /**
+   * Gets user packages by status
+   * @param user - User entity
+   * @param status - User package status
+   * @returns ApiResponse containing the user packages by status
+   * @throws NotFoundException if no packages found for the user
+   */
+  async getUserPackagesByStatus(
+    user: User,
+    status: UserPackageStatus,
+  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
+    const userPackages = await this.userPackageRepository.find({
+      where: { userId: user.id, status },
+    });
+    if (userPackages.length === 0) {
+      throw new NotFoundException(`No ${status} packages found for the user`);
+    }
+    return ApiResponse.success(`${status} packages retrieved successfully`, {
+      userPackages: userPackages.map(UserPackageResponseDto.fromEntity),
+    });
+  }
 
   /**
    * Purchases a package for a user
@@ -93,8 +116,10 @@ export class UserPackageService {
       purchasePackageDto.investmentAmount,
     );
 
+    const increaseInBotMaxIncome = purchasePackageDto.investmentAmount * pkg.returnCapital;
+
     // Update bot max income
-    await this.botsService.updateBotMaxIncome(bot, purchasePackageDto.investmentAmount);
+    await this.botsService.updateBotMaxIncome(bot, increaseInBotMaxIncome);
 
     // Update user role if needed
     await this.userService.updateUserRoleToInvestorIfNeeded(user);

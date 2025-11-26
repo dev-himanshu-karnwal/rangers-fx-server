@@ -1,10 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, ParseEnumPipe } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { PackageResponseDto, PurchasePackageDto, UserPackageResponseDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
 import { User } from '../user/entities/user.entity';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UserPackageService } from './services';
+import { UserPackageStatus } from './enums';
 
 @Controller('packages')
 export class PackagesController {
@@ -29,5 +30,13 @@ export class PackagesController {
     @Body() purchasePackageDto: PurchasePackageDto,
   ): Promise<ApiResponse<{ userPackage: UserPackageResponseDto }>> {
     return this.userPackageService.purchasePackage(user, purchasePackageDto);
+  }
+
+  @Get('user/:status')
+  async getUserPackagesByStatus(
+    @CurrentUser() user: User,
+    @Param('status', new ParseEnumPipe(UserPackageStatus)) status: UserPackageStatus,
+  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
+    return this.userPackageService.getUserPackagesByStatus(user, status);
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { BotsService } from './bots.service';
 import { ActivateBotDto, BotActivationResponseDto } from './dto';
 import { User } from '../user/entities';
@@ -16,5 +16,10 @@ export class BotsController {
     @Body() activateBotDto: ActivateBotDto,
   ): Promise<ApiResponse<{ botActivation: BotActivationResponseDto; transactions: TransactionResponseDto[] }>> {
     return this.botsService.activateBot(user, activateBotDto);
+  }
+
+  @Get('active')
+  async getActiveBot(@CurrentUser() user: User): Promise<ApiResponse<{ botActivation: BotActivationResponseDto }>> {
+    return this.botsService.getActiveBot(user);
   }
 }

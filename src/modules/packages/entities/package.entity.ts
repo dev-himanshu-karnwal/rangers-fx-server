@@ -63,7 +63,7 @@ export class Package {
     name: 'return_capital',
     transformer: decimalTransformer,
   })
-  returnCapital?: number | null; // e.g., 2.0, 2.5, etc.
+  returnCapital: number; // e.g., 2.0, 2.5, etc.
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
