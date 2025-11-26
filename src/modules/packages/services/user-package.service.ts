@@ -18,6 +18,7 @@ import { PackagesService } from '../packages.service';
 import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
 import { UserPackageStatus } from '../enums';
+import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
 
 /**
  * User Package Service - handles user package purchase operations
@@ -33,6 +34,7 @@ export class UserPackageService {
     private readonly transactionService: TransactionService,
     private readonly botsService: BotsService,
     private readonly userService: UserService,
+    private readonly userPackagePostPurchaseService: UserPackagePostPurchaseService,
   ) {}
 
   /**
@@ -117,13 +119,8 @@ export class UserPackageService {
       purchasePackageDto.investmentAmount,
     );
 
-    const increaseInBotMaxIncome = purchasePackageDto.investmentAmount * pkg.returnCapital;
-
-    // Update bot max income
-    await this.botsService.updateBotMaxIncome(bot, increaseInBotMaxIncome);
-
-    // Update user role if needed
-    await this.userService.updateUserRoleToInvestorIfNeeded(user);
+    // Update domain entities that depend on the purchase success
+    await this.userPackagePostPurchaseService.handlePostPurchaseSuccess(user, bot);
 
     // Return response with relations
     const userPackageWithRelations = await this.getUserPackageWithRelations(userPackage.id);

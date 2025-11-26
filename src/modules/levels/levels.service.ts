@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Level } from './entities';
+import { IsNull, Repository } from 'typeorm';
+import { Level, UserLevel } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { LevelResponseDto } from './dto';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class LevelsService {
   constructor(
     @InjectRepository(Level)
     private readonly levelRepository: Repository<Level>,
+    @InjectRepository(UserLevel)
+    private readonly userLevelRepository: Repository<UserLevel>,
   ) {}
 
   /**
@@ -46,6 +49,42 @@ export class LevelsService {
    * @returns Level entity if found, otherwise throws NotFoundException
    */
   async getByHierarchy(hierarchy: number): Promise<Level> {
+    return this.getLevelEntityByHierarchy(hierarchy);
+  }
+
+  /**
+   * Assigns a level to a user based on the provided hierarchy.
+   * If the user already has the same active level, it reuses it.
+   * Otherwise, it closes the previous active level (if any) and creates a new assignment.
+   */
+  async assignLevelByHierarchy(user: User, hierarchy: number): Promise<UserLevel> {
+    const targetLevel = await this.getLevelEntityByHierarchy(hierarchy);
+
+    const activeUserLevel = await this.userLevelRepository.findOne({
+      where: { userId: user.id, endDate: IsNull() },
+    });
+
+    if (activeUserLevel) {
+      if (activeUserLevel.levelId === targetLevel.id) {
+        return activeUserLevel;
+      }
+      activeUserLevel.endDate = new Date();
+      await this.userLevelRepository.save(activeUserLevel);
+    }
+
+    const userLevel = this.userLevelRepository.create({
+      user,
+      userId: user.id,
+      level: targetLevel,
+      levelId: targetLevel.id,
+      startDate: new Date(),
+      endDate: null,
+    });
+
+    return this.userLevelRepository.save(userLevel);
+  }
+
+  private async getLevelEntityByHierarchy(hierarchy: number): Promise<Level> {
     const level = await this.levelRepository.findOneBy({ hierarchy });
     if (!level) {
       throw new NotFoundException(`Level with hierarchy ${hierarchy} not found`);
