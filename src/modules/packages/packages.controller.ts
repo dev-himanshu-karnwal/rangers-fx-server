@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body, ParseEnumPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, ParseEnumPipe, Query } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { PackageResponseDto, PurchasePackageDto, UserPackageResponseDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -19,6 +19,14 @@ export class PackagesController {
     return this.packagesService.getAll();
   }
 
+  @Get('user')
+  async getUserPackages(
+    @CurrentUser() user: User,
+    @Query('status', new ParseEnumPipe(UserPackageStatus, { optional: true })) status: UserPackageStatus | undefined,
+  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
+    return this.userPackageService.getUserPackages(user, status);
+  }
+
   @Get(':id')
   async getById(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse<{ package: PackageResponseDto }>> {
     return this.packagesService.getById(id);
@@ -30,13 +38,5 @@ export class PackagesController {
     @Body() purchasePackageDto: PurchasePackageDto,
   ): Promise<ApiResponse<{ userPackage: UserPackageResponseDto }>> {
     return this.userPackageService.purchasePackage(user, purchasePackageDto);
-  }
-
-  @Get('user/:status')
-  async getUserPackagesByStatus(
-    @CurrentUser() user: User,
-    @Param('status', new ParseEnumPipe(UserPackageStatus)) status: UserPackageStatus,
-  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
-    return this.userPackageService.getUserPackagesByStatus(user, status);
   }
 }

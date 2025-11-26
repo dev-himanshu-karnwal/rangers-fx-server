@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { UserPackage } from '../entities/user-package.entity';
 import { Package } from '../entities/package.entity';
 import { PurchasePackageDto } from '../dto/purchase-package.dto';
@@ -36,23 +36,24 @@ export class UserPackageService {
   ) {}
 
   /**
-   * Gets user packages by status
+   * Gets user packages
    * @param user - User entity
    * @param status - User package status
-   * @returns ApiResponse containing the user packages by status
+   * @returns ApiResponse containing the user packages
    * @throws NotFoundException if no packages found for the user
    */
-  async getUserPackagesByStatus(
+  async getUserPackages(
     user: User,
-    status: UserPackageStatus,
+    status: UserPackageStatus | undefined,
   ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
-    const userPackages = await this.userPackageRepository.find({
-      where: { userId: user.id, status },
-    });
+    const where: FindOptionsWhere<UserPackage> = { userId: user.id };
+    if (status) where.status = status;
+
+    const userPackages = await this.userPackageRepository.find({ where });
     if (userPackages.length === 0) {
-      throw new NotFoundException(`No ${status} packages found for the user`);
+      throw new NotFoundException(`No packages found for the user`);
     }
-    return ApiResponse.success(`${status} packages retrieved successfully`, {
+    return ApiResponse.success(`Packages retrieved successfully`, {
       userPackages: userPackages.map(UserPackageResponseDto.fromEntity),
     });
   }
