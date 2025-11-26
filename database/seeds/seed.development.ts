@@ -12,6 +12,8 @@ import { UserRole, WorkRole, UserStatus } from '../../src/modules/user/enums/use
 import { PackageType } from '../../src/modules/packages/enums';
 import { Package } from '../../src/modules/packages/entities/package.entity';
 import { Level } from '../../src/modules/levels/entities/level.entity';
+import { LevelConditionScope, LevelConditionType } from '../../src/modules/levels/enums';
+import { LevelCondition } from '../../src/modules/levels/interfaces';
 
 // Load environment variables from .env.development file
 // Works from both TypeScript source and compiled JavaScript
@@ -122,7 +124,13 @@ async function seed() {
     }
 
     // Create levels
-    const LEVELS_DATA = [
+    type LevelSeedData = {
+      title: string;
+      appraisalBonus: number;
+      passiveIncomePercentage: number;
+      conditions: LevelCondition[];
+    };
+    const LEVELS_DATA: LevelSeedData[] = [
       {
         title: 'Executive',
         appraisalBonus: 0,
@@ -135,8 +143,8 @@ async function seed() {
         passiveIncomePercentage: 3,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'DIRECT',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.DIRECT,
             value: 1_500,
           },
         ],
@@ -147,13 +155,13 @@ async function seed() {
         passiveIncomePercentage: 2,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 10_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 2,
           },
@@ -165,13 +173,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 30_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 3,
           },
@@ -183,13 +191,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 70_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 4,
           },
@@ -201,13 +209,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 170_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 5,
           },
@@ -219,13 +227,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 370_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 6,
           },
@@ -237,13 +245,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 770_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 7,
           },
@@ -255,13 +263,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 1_370_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 8,
           },
@@ -273,13 +281,13 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'BUSINESS',
-            scope: 'NETWORK',
+            type: LevelConditionType.BUSINESS,
+            scope: LevelConditionScope.NETWORK,
             value: 2_120_000,
           },
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 9,
           },
@@ -291,8 +299,8 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 10,
           },
@@ -304,8 +312,8 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 11,
           },
@@ -317,8 +325,8 @@ async function seed() {
         passiveIncomePercentage: 1,
         conditions: [
           {
-            type: 'LEVELS',
-            scope: 'NETWORK',
+            type: LevelConditionType.LEVELS,
+            scope: LevelConditionScope.NETWORK,
             value: 2,
             level: 12,
           },
@@ -328,12 +336,14 @@ async function seed() {
 
     for (const idx in LEVELS_DATA) {
       const levelData = LEVELS_DATA[idx];
+      const hierarchy = Number(idx) + 1;
 
       const level = levelRepository.create({
-        ...levelData,
-        id: Number(idx) + 1,
-        hierarchy: Number(idx) + 1,
+        title: levelData.title,
+        appraisalBonus: levelData.appraisalBonus,
+        passiveIncomePercentage: levelData.passiveIncomePercentage,
         conditions: JSON.stringify(levelData.conditions),
+        hierarchy,
       });
 
       await levelRepository.save(level);
