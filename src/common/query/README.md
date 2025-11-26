@@ -25,7 +25,7 @@ export class BotsController {
   @Get()
   async getAllBots(
     @Query() query: QueryParamsDto,
-  ): Promise<ApiResponse<{ total: number; page: number; pageSize: number; data: BotResponseDto[] }>> {
+  ): Promise<ApiResponse<{ meta: { total: number; page: number; pageSize: number }; data: BotResponseDto[] }>> {
     return this.botsService.getAllBots(query);
   }
 }
@@ -63,6 +63,7 @@ export class BotsService {
         total,
         parsed,
       ),
+      // Returns: { meta: { total, page, pageSize }, data: [...] }
     });
   }
 }
@@ -83,10 +84,11 @@ async getUserBots(userId: number, query: QueryParamsDto) {
 
   return ApiResponse.success('Bots retrieved successfully', {
     ...QueryParamsHelper.toPaginatedResult(
-      data.map(item => BotResponseDto.fromEntity(item)),
+      data.map((item) => BotResponseDto.fromEntity(item)),
       total,
       parsed,
     ),
+    // Returns: { meta: { total, page, pageSize }, data: [...] }
   });
 }
 ```

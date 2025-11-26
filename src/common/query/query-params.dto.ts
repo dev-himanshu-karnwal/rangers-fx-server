@@ -1,23 +1,19 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min, IsString } from 'class-validator';
+import { IsInt, IsOptional, Min, IsString, IsDateString } from 'class-validator';
 
 /**
  * Generic query parameters DTO for GET all APIs.
  * Handles pagination, sorting, and dynamic filter fields.
  *
  * Usage:
- * - Extend this class to add specific filter fields for your entity
- * - Or use it directly and access filter fields via index signature
+ * - Use this class directly for common filters (status, search, startDate, endDate)
+ * - Extend this class to add entity-specific filter fields
  *
  * @example
  * class BotQueryDto extends QueryParamsDto {
  *   @IsOptional()
  *   @IsString()
- *   status?: string;
- *
- *   @IsOptional()
- *   @IsString()
- *   search?: string;
+ *   customField?: string;
  * }
  */
 export class QueryParamsDto {
@@ -36,6 +32,22 @@ export class QueryParamsDto {
   @IsOptional()
   @IsString()
   sort?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 
   // Index signature to allow any additional filter fields
   [key: string]: any;

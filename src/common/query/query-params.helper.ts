@@ -1,4 +1,5 @@
 import { QueryParamsDto, ParsedQueryParams } from './query-params.dto';
+import { PaginatedResult } from '../pagination/pagination-query.dto';
 
 /**
  * Helper class to parse and transform query parameters into TypeORM-compatible options.
@@ -136,27 +137,20 @@ export class QueryParamsHelper {
   }
 
   /**
-   * Creates a paginated response object.
+   * Creates a paginated response object with metadata wrapped in a 'meta' key.
    *
    * @param data - Array of data items
    * @param total - Total count of items
    * @param parsed - Parsed query parameters
-   * @returns Paginated result
+   * @returns Paginated result with meta and data
    */
-  static toPaginatedResult<T>(
-    data: T[],
-    total: number,
-    parsed: ParsedQueryParams,
-  ): {
-    total: number;
-    page: number;
-    pageSize: number;
-    data: T[];
-  } {
+  static toPaginatedResult<T>(data: T[], total: number, parsed: ParsedQueryParams): PaginatedResult<T> {
     return {
-      total,
-      page: parsed.page,
-      pageSize: parsed.pageSize,
+      meta: {
+        total,
+        page: parsed.page,
+        limit: parsed.pageSize,
+      },
       data,
     };
   }
