@@ -137,21 +137,41 @@ export class QueryParamsHelper {
   }
 
   /**
-   * Creates a paginated response object with metadata wrapped in a 'meta' key.
+   * Creates a paginated response object with entity key inside data.
+   * Structure: { meta: {...}, entityKey: [...] }
+   * Note: This returns the inner object, not wrapped in 'data', as ApiResponse.success will wrap it.
    *
    * @param data - Array of data items
    * @param total - Total count of items
    * @param parsed - Parsed query parameters
-   * @returns Paginated result with meta and data
+   * @param entityKey - Key name for the entity array (e.g., 'bots', 'levels', 'packages')
+   * @returns Object containing meta and entity array (to be wrapped by ApiResponse.success)
    */
-  static toPaginatedResult<T>(data: T[], total: number, parsed: ParsedQueryParams): PaginatedResult<T> {
+  static toPaginatedResultWithEntityKey<T, K extends string>(
+    data: T[],
+    total: number,
+    parsed: ParsedQueryParams,
+    entityKey: K,
+  ): {
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+    };
+  } & Record<K, T[]> {
+    const meta = {
+      total,
+      page: parsed.page,
+      limit: parsed.pageSize,
+    };
+
+    // Construct object using Object.fromEntries for type safety
+    const entityEntries: [K, T[]][] = [[entityKey, data]];
+    const entityRecord = Object.fromEntries(entityEntries) as Record<K, T[]>;
+
     return {
-      meta: {
-        total,
-        page: parsed.page,
-        limit: parsed.pageSize,
-      },
-      data,
+      meta,
+      ...entityRecord,
     };
   }
 }

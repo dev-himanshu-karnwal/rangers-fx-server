@@ -4,8 +4,7 @@ import { Equal, FindOneOptions, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UserResponseDto } from '../dto';
 import { ApiResponse } from '../../../common/response/api.response';
-import { PaginationQueryDto } from '../../../common/pagination/pagination-query.dto';
-import { PaginationHelper } from '../../../common/pagination/pagination.helper';
+import { QueryParamsDto, QueryParamsHelper } from '../../../common/query';
 
 /**
  * User Query Service - handles all user query/find operations
@@ -108,30 +107,112 @@ export class UserQueryService {
   }
 
   /**
-   * Find all direct children (referrals) of a user by their user ID.
+   * Find all direct children (referrals) of a user by their user ID with pagination, sorting, and filtering.
    * This returns all users whose `referredByUserId` matches the given ID,
    * meaning they were referred directly by that user.
    * @param id - The ID of the parent/referrer user.
-   * @param pagination - Optional pagination parameters
+   * @param query - Query parameters (pagination, sorting, filters)
    * @returns A list of User entities wrapped in ApiResponse
    */
   async findDirectChildrenOfUserById(
     id: number,
-    pagination?: PaginationQueryDto,
-  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: UserResponseDto[] }>> {
-    const baseWhere = { referredByUserId: id };
-    const { skip, take, order } = PaginationHelper.build(pagination ?? new PaginationQueryDto());
+    query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      users: UserResponseDto[];
+    }>
+  > {
+    // Parse query parameters
+    const parsed = QueryParamsHelper.parse(query);
 
-    const [directChildren, total] = await this.userRepository.findAndCount({ where: baseWhere, skip, take, order });
-    if (directChildren.length === 0) {
-      throw new NotFoundException(`Direct Children not found for ${id} User Id`);
+    // Build query builder for filtering and sorting
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    const metadata = this.userRepository.metadata;
+
+    // Base filter: always filter by referredByUserId
+    const referredByUserIdColumn = metadata.findColumnWithPropertyName('referredByUserId');
+    queryBuilder.where(`user.${referredByUserIdColumn?.databaseName || 'referred_by_user_id'} = :id`, { id });
+
+    // Apply filters
+    const { filters } = parsed;
+
+    // Search filter (searches in fullName and email fields)
+    if (filters.search) {
+      const fullNameColumn = metadata.findColumnWithPropertyName('fullName');
+      const emailColumn = metadata.findColumnWithPropertyName('email');
+      queryBuilder.andWhere(
+        `(user.${fullNameColumn?.databaseName || 'full_name'} ILIKE :search OR user.${emailColumn?.databaseName || 'email'} ILIKE :search)`,
+        { search: `%${filters.search}%` },
+      );
     }
-    return ApiResponse.success('Direct Children fetched Successfully.', {
+
+    // Status filter
+    if (filters.status) {
+      const statusColumn = metadata.findColumnWithPropertyName('status');
+      queryBuilder.andWhere(`user.${statusColumn?.databaseName || 'status'} = :status`, { status: filters.status });
+    }
+
+    // Date range filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`user.${createdAtColumn?.databaseName || 'created_at'} >= :startDate`, { startDate });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`user.${createdAtColumn?.databaseName || 'created_at'} <= :endDate`, { endDate });
+    }
+
+    // Apply sorting
+    const orderEntries = Object.entries(parsed.order);
+
+    if (orderEntries.length > 0) {
+      const [firstField, firstDirection] = orderEntries[0];
+      const firstColumn = metadata.findColumnWithPropertyName(firstField);
+      if (firstColumn) {
+        queryBuilder.orderBy(`user.${firstColumn.databaseName}`, firstDirection);
+      } else {
+        queryBuilder.orderBy(`user.${firstField}`, firstDirection);
+      }
+
+      // Add additional sort fields
+      for (let i = 1; i < orderEntries.length; i++) {
+        const [field, direction] = orderEntries[i];
+        const column = metadata.findColumnWithPropertyName(field);
+        if (column) {
+          queryBuilder.addOrderBy(`user.${column.databaseName}`, direction);
+        } else {
+          queryBuilder.addOrderBy(`user.${field}`, direction);
+        }
+      }
+    } else {
+      // Default sorting by createdAt DESC
+      queryBuilder.orderBy('user.created_at', 'DESC');
+    }
+
+    // Apply pagination
+    queryBuilder.skip(parsed.skip).take(parsed.take);
+
+    // Execute query
+    const [directChildren, total] = await queryBuilder.getManyAndCount();
+
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      directChildren.map((user) => UserResponseDto.fromEntity(user)),
       total,
-      page: pagination?.page ?? 1,
-      limit: pagination?.limit ?? 10,
-      data: directChildren.map((user) => UserResponseDto.fromEntity(user)),
-    });
+      parsed,
+      'users',
+    );
+
+    return ApiResponse.success('Direct Children fetched Successfully.', result);
   }
 
   /**

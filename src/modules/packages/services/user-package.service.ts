@@ -19,6 +19,7 @@ import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
 import { UserPackageStatus } from '../enums';
 import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
 
 /**
  * User Package Service - handles user package purchase operations
@@ -38,26 +39,106 @@ export class UserPackageService {
   ) {}
 
   /**
-   * Gets user packages
+   * Gets user packages with pagination, sorting, and filtering.
    * @param user - User entity
-   * @param status - User package status
-   * @returns ApiResponse containing the user packages
-   * @throws NotFoundException if no packages found for the user
+   * @param query - Query parameters (pagination, sorting, filters)
+   * @returns ApiResponse containing paginated user packages
    */
   async getUserPackages(
     user: User,
-    status: UserPackageStatus | undefined,
-  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
-    const where: FindOptionsWhere<UserPackage> = { userId: user.id };
-    if (status) where.status = status;
+    query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      userPackages: UserPackageResponseDto[];
+    }>
+  > {
+    // Parse query parameters
+    const parsed = QueryParamsHelper.parse(query);
 
-    const userPackages = await this.userPackageRepository.find({ where });
-    if (userPackages.length === 0) {
-      throw new NotFoundException(`No packages found for the user`);
+    // Build query builder for complex filtering (date ranges, search)
+    const queryBuilder = this.userPackageRepository.createQueryBuilder('userPackage');
+    const metadata = this.userPackageRepository.metadata;
+
+    // Base filter: always filter by user ID
+    const userIdColumn = metadata.findColumnWithPropertyName('userId');
+    queryBuilder.where(`userPackage.${userIdColumn?.databaseName || 'user_id'} = :userId`, { userId: user.id });
+
+    // Apply filters
+    const { filters } = parsed;
+
+    // Status filter
+    if (filters.status) {
+      const statusColumn = metadata.findColumnWithPropertyName('status');
+      queryBuilder.andWhere(`userPackage.${statusColumn?.databaseName || 'status'} = :status`, {
+        status: filters.status,
+      });
     }
-    return ApiResponse.success(`Packages retrieved successfully`, {
-      userPackages: userPackages.map(UserPackageResponseDto.fromEntity),
-    });
+
+    // Date range filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`userPackage.${createdAtColumn?.databaseName || 'created_at'} >= :startDate`, {
+        startDate,
+      });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`userPackage.${createdAtColumn?.databaseName || 'created_at'} <= :endDate`, {
+        endDate,
+      });
+    }
+
+    // Apply sorting
+    const orderEntries = Object.entries(parsed.order);
+
+    if (orderEntries.length > 0) {
+      const [firstField, firstDirection] = orderEntries[0];
+      const firstColumn = metadata.findColumnWithPropertyName(firstField);
+      if (firstColumn) {
+        queryBuilder.orderBy(`userPackage.${firstColumn.databaseName}`, firstDirection);
+      } else {
+        queryBuilder.orderBy(`userPackage.${firstField}`, firstDirection);
+      }
+
+      // Add additional sort fields
+      for (let i = 1; i < orderEntries.length; i++) {
+        const [field, direction] = orderEntries[i];
+        const column = metadata.findColumnWithPropertyName(field);
+        if (column) {
+          queryBuilder.addOrderBy(`userPackage.${column.databaseName}`, direction);
+        } else {
+          queryBuilder.addOrderBy(`userPackage.${field}`, direction);
+        }
+      }
+    } else {
+      // Default sorting by createdAt DESC
+      queryBuilder.orderBy('userPackage.created_at', 'DESC');
+    }
+
+    // Apply pagination
+    queryBuilder.skip(parsed.skip).take(parsed.take);
+
+    // Execute query
+    const [userPackages, total] = await queryBuilder.getManyAndCount();
+
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      userPackages.map((userPackage) => UserPackageResponseDto.fromEntity(userPackage)),
+      total,
+      parsed,
+      'userPackages',
+    );
+
+    return ApiResponse.success('Packages retrieved successfully', result);
   }
 
   /**

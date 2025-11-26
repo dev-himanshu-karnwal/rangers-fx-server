@@ -19,13 +19,4 @@ export class PaginationHelper {
       order: { [sortField]: direction },
     };
   }
-
-  static toPaginatedResult<T>(data: T[], total: number, query: PaginationQueryDto) {
-    return {
-      total,
-      page: query.page || 1,
-      limit: query.limit || 10,
-      data,
-    };
-  }
 }

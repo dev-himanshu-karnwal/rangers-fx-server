@@ -5,9 +5,8 @@ import { User } from '../user/entities';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiResponse } from 'src/common/response/api.response';
 import { TransactionResponseDto } from '../transactions/dto';
-import { QueryParamsDto } from 'src/common/query';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
 import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
-import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Controller('bots')
 export class BotsController {
@@ -30,7 +29,16 @@ export class BotsController {
   async getUserBots(
     @CurrentUser() user: User,
     @Query(new QueryValidationPipe()) query: QueryParamsDto,
-  ): Promise<ApiResponse<PaginatedResult<BotActivationResponseDto>>> {
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      bots: BotActivationResponseDto[];
+    }>
+  > {
     return this.botsService.getUserBots(user, query);
   }
 }

@@ -113,7 +113,16 @@ export class BotsService {
   async getUserBots(
     user: User,
     query: QueryParamsDto,
-  ): Promise<ApiResponse<PaginatedResult<BotActivationResponseDto>>> {
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      bots: BotActivationResponseDto[];
+    }>
+  > {
     // Parse query parameters
     const parsed = QueryParamsHelper.parse(query);
 
@@ -193,13 +202,14 @@ export class BotsService {
     // Execute query
     const [bots, total] = await queryBuilder.getManyAndCount();
 
-    return ApiResponse.success('User bots found', {
-      ...QueryParamsHelper.toPaginatedResult(
-        bots.map((bot) => BotActivationResponseDto.fromEntity(bot)),
-        total,
-        parsed,
-      ),
-    });
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      bots.map((bot) => BotActivationResponseDto.fromEntity(bot)),
+      total,
+      parsed,
+      'bots',
+    );
+
+    return ApiResponse.success('User bots found', result);
   }
 
   /**

@@ -1,11 +1,12 @@
-import { Controller, Get, Param, ParseIntPipe, Post, Body, ParseEnumPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Body, Query } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { PackageResponseDto, PurchasePackageDto, UserPackageResponseDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
 import { User } from '../user/entities/user.entity';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UserPackageService } from './services';
-import { UserPackageStatus } from './enums';
+import { QueryParamsDto } from 'src/common/query';
+import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
 
 @Controller('packages')
 export class PackagesController {
@@ -15,16 +16,34 @@ export class PackagesController {
   ) {}
 
   @Get()
-  async getAll(): Promise<ApiResponse<{ packages: PackageResponseDto[] }>> {
-    return this.packagesService.getAll();
+  async getAll(@Query(new QueryValidationPipe()) query: QueryParamsDto): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      packages: PackageResponseDto[];
+    }>
+  > {
+    return this.packagesService.getAll(query);
   }
 
   @Get('user')
   async getUserPackages(
     @CurrentUser() user: User,
-    @Query('status', new ParseEnumPipe(UserPackageStatus, { optional: true })) status: UserPackageStatus | undefined,
-  ): Promise<ApiResponse<{ userPackages: UserPackageResponseDto[] }>> {
-    return this.userPackageService.getUserPackages(user, status);
+    @Query(new QueryValidationPipe()) query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      userPackages: UserPackageResponseDto[];
+    }>
+  > {
+    return this.userPackageService.getUserPackages(user, query);
   }
 
   @Get(':id')

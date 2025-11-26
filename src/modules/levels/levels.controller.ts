@@ -1,15 +1,26 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { LevelsService } from './levels.service';
 import { ApiResponse } from 'src/common/response/api.response';
 import { LevelResponseDto } from './dto';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
 
 @Controller('levels')
 export class LevelsController {
   constructor(private readonly levelsService: LevelsService) {}
 
   @Get()
-  async getLevels(): Promise<ApiResponse<{ levels: LevelResponseDto[] }>> {
-    return this.levelsService.getAll();
+  async getLevels(@Query(new QueryValidationPipe()) query: QueryParamsDto): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      levels: LevelResponseDto[];
+    }>
+  > {
+    return this.levelsService.getAll(query);
   }
 
   @Get(':id')

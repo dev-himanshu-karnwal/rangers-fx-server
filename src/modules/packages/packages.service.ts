@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Package } from './entities';
 import { PackageResponseDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Injectable()
 export class PackagesService {
@@ -13,14 +15,100 @@ export class PackagesService {
   ) {}
 
   /**
-   * Gets all packages
+   * Gets all packages with pagination, sorting, and filtering.
    */
-  async getAll(): Promise<ApiResponse<{ packages: PackageResponseDto[] }>> {
-    const packages = await this.packageRepository.find();
+  async getAll(query: QueryParamsDto): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      packages: PackageResponseDto[];
+    }>
+  > {
+    // Parse query parameters
+    const parsed = QueryParamsHelper.parse(query);
 
-    return ApiResponse.success('Packages retrieved successfully', {
-      packages: packages.map(PackageResponseDto.fromEntity),
-    });
+    // Build query builder for filtering and sorting
+    const queryBuilder = this.packageRepository.createQueryBuilder('package');
+    const metadata = this.packageRepository.metadata;
+
+    // Apply filters
+    const { filters } = parsed;
+
+    // Search filter (searches in title field)
+    if (filters.search) {
+      const titleColumn = metadata.findColumnWithPropertyName('title');
+      queryBuilder.andWhere(`package.${titleColumn?.databaseName || 'title'} ILIKE :search`, {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    // Type filter
+    if (filters.type) {
+      const typeColumn = metadata.findColumnWithPropertyName('type');
+      queryBuilder.andWhere(`package.${typeColumn?.databaseName || 'type'} = :type`, {
+        type: filters.type,
+      });
+    }
+
+    // Date range filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`package.${createdAtColumn?.databaseName || 'created_at'} >= :startDate`, { startDate });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`package.${createdAtColumn?.databaseName || 'created_at'} <= :endDate`, { endDate });
+    }
+
+    // Apply sorting
+    const orderEntries = Object.entries(parsed.order);
+
+    if (orderEntries.length > 0) {
+      const [firstField, firstDirection] = orderEntries[0];
+      const firstColumn = metadata.findColumnWithPropertyName(firstField);
+      if (firstColumn) {
+        queryBuilder.orderBy(`package.${firstColumn.databaseName}`, firstDirection);
+      } else {
+        queryBuilder.orderBy(`package.${firstField}`, firstDirection);
+      }
+
+      // Add additional sort fields
+      for (let i = 1; i < orderEntries.length; i++) {
+        const [field, direction] = orderEntries[i];
+        const column = metadata.findColumnWithPropertyName(field);
+        if (column) {
+          queryBuilder.addOrderBy(`package.${column.databaseName}`, direction);
+        } else {
+          queryBuilder.addOrderBy(`package.${field}`, direction);
+        }
+      }
+    } else {
+      // Default sorting by createdAt DESC
+      queryBuilder.orderBy('package.created_at', 'DESC');
+    }
+
+    // Apply pagination
+    queryBuilder.skip(parsed.skip).take(parsed.take);
+
+    // Execute query
+    const [packages, total] = await queryBuilder.getManyAndCount();
+
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      packages.map((pkg) => PackageResponseDto.fromEntity(pkg)),
+      total,
+      parsed,
+      'packages',
+    );
+
+    return ApiResponse.success('Packages retrieved successfully', result);
   }
 
   /**

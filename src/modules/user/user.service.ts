@@ -3,8 +3,8 @@ import { FindOneOptions } from 'typeorm';
 import { User } from './entities/user.entity';
 import { ChangeMailDto, ChangePasswordDto, EmailVerifyDTO, UpdateUserDto, UserResponseDto } from './dto';
 import { ApiResponse } from '../../common/response/api.response';
-import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
 import { UserStatus, WorkRole } from './enums/user.enum';
+import { QueryParamsDto } from '../../common/query';
 import {
   UserQueryService,
   UserPasswordService,
@@ -110,14 +110,23 @@ export class UserService {
   /**
    * Find all direct children (referrals) of a user by their user ID.
    * @param id - The ID of the parent/referrer user.
-   * @param pagination - Optional pagination parameters
+   * @param query - Query parameters (pagination, sorting, filters)
    * @returns A list of User entities wrapped in ApiResponse
    */
   async findDirectChildrenOfUserById(
     id: number,
-    pagination?: PaginationQueryDto,
-  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: UserResponseDto[] }>> {
-    return this.userQueryService.findDirectChildrenOfUserById(id, pagination);
+    query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      users: UserResponseDto[];
+    }>
+  > {
+    return this.userQueryService.findDirectChildrenOfUserById(id, query);
   }
 
   /**

@@ -17,7 +17,8 @@ import { User } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Public } from 'src/common/decorators/public.decorator';
-import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { QueryParamsDto } from '../../common/query';
+import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -117,17 +118,27 @@ export class UserController {
     return this.userService.updatePersonalDetails(updateUserDto, user);
   }
   /**
-   * Get User direct-children
-   * @param UserId -  User ID
-   * @returns List of user
+   * Get User direct-children with pagination, sorting, and filtering
+   * @param id - User ID
+   * @param query - Query parameters (pagination, sorting, filters)
+   * @returns List of users
    */
   @Get(':id/direct-children')
   @HttpCode(HttpStatus.OK)
   async getDirectChildernOfUserbyId(
     @Param('id', ParseIntPipe) id: number,
-    @Query() pagination: PaginationQueryDto,
-  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: UserResponseDto[] }>> {
-    return await this.userService.findDirectChildrenOfUserById(id, pagination);
+    @Query(new QueryValidationPipe()) query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      users: UserResponseDto[];
+    }>
+  > {
+    return await this.userService.findDirectChildrenOfUserById(id, query);
   }
 
   /**

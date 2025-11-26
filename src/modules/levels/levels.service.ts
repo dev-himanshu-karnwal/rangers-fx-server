@@ -5,6 +5,8 @@ import { Level, UserLevel } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { LevelResponseDto } from './dto';
 import { User } from '../user/entities/user.entity';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Injectable()
 export class LevelsService {
@@ -16,16 +18,100 @@ export class LevelsService {
   ) {}
 
   /**
-   * Retrieves all levels.
+   * Retrieves all levels with pagination, sorting, and filtering.
    */
-  async getAll(): Promise<ApiResponse<{ levels: LevelResponseDto[] }>> {
-    const levels = await this.levelRepository.find({
-      order: { hierarchy: 'ASC' },
-    });
+  async getAll(query: QueryParamsDto): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      levels: LevelResponseDto[];
+    }>
+  > {
+    // Parse query parameters
+    const parsed = QueryParamsHelper.parse(query);
 
-    return ApiResponse.success('Levels retrieved successfully', {
-      levels: levels.map(LevelResponseDto.fromEntity),
-    });
+    // Build query builder for filtering and sorting
+    const queryBuilder = this.levelRepository.createQueryBuilder('level');
+    const metadata = this.levelRepository.metadata;
+
+    // Apply filters
+    const { filters } = parsed;
+
+    // Search filter (searches in title field)
+    if (filters.search) {
+      const titleColumn = metadata.findColumnWithPropertyName('title');
+      queryBuilder.andWhere(`level.${titleColumn?.databaseName || 'title'} ILIKE :search`, {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    // Hierarchy filter
+    if (filters.hierarchy) {
+      const hierarchyColumn = metadata.findColumnWithPropertyName('hierarchy');
+      queryBuilder.andWhere(`level.${hierarchyColumn?.databaseName || 'hierarchy'} = :hierarchy`, {
+        hierarchy: filters.hierarchy,
+      });
+    }
+
+    // Date range filters
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`level.${createdAtColumn?.databaseName || 'created_at'} >= :startDate`, { startDate });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      const createdAtColumn = metadata.findColumnWithPropertyName('createdAt');
+      queryBuilder.andWhere(`level.${createdAtColumn?.databaseName || 'created_at'} <= :endDate`, { endDate });
+    }
+
+    // Apply sorting
+    const orderEntries = Object.entries(parsed.order);
+
+    if (orderEntries.length > 0) {
+      const [firstField, firstDirection] = orderEntries[0];
+      const firstColumn = metadata.findColumnWithPropertyName(firstField);
+      if (firstColumn) {
+        queryBuilder.orderBy(`level.${firstColumn.databaseName}`, firstDirection);
+      } else {
+        queryBuilder.orderBy(`level.${firstField}`, firstDirection);
+      }
+
+      // Add additional sort fields
+      for (let i = 1; i < orderEntries.length; i++) {
+        const [field, direction] = orderEntries[i];
+        const column = metadata.findColumnWithPropertyName(field);
+        if (column) {
+          queryBuilder.addOrderBy(`level.${column.databaseName}`, direction);
+        } else {
+          queryBuilder.addOrderBy(`level.${field}`, direction);
+        }
+      }
+    } else {
+      // Default sorting by hierarchy
+      queryBuilder.orderBy('level.hierarchy', 'ASC');
+    }
+
+    // Apply pagination
+    queryBuilder.skip(parsed.skip).take(parsed.take);
+
+    // Execute query
+    const [levels, total] = await queryBuilder.getManyAndCount();
+
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      levels.map((level) => LevelResponseDto.fromEntity(level)),
+      total,
+      parsed,
+      'levels',
+    );
+
+    return ApiResponse.success('Levels retrieved successfully', result);
   }
 
   /**
