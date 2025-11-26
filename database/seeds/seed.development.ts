@@ -11,6 +11,7 @@ import { WalletType } from '../../src/modules/wallets/enums/wallet.enum';
 import { UserRole, WorkRole, UserStatus } from '../../src/modules/user/enums/user.enum';
 import { PackageType } from '../../src/modules/packages/enums';
 import { Package } from '../../src/modules/packages/entities/package.entity';
+import { Level } from '../../src/modules/levels/entities/level.entity';
 
 // Load environment variables from .env.development file
 // Works from both TypeScript source and compiled JavaScript
@@ -22,14 +23,10 @@ async function seed() {
   // Create DataSource connection
   const dataSource = new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT) || 5432,
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'rangers_fx',
-    entities: [User, Wallet, Package],
+    url: process.env.DATABASE_URL,
+    entities: [User, Wallet, Package, Level],
     synchronize: false,
-    logging: true,
+    logging: false,
   });
 
   try {
@@ -40,7 +37,7 @@ async function seed() {
     const userRepository = dataSource.getRepository(User);
     const walletRepository = dataSource.getRepository(Wallet);
     const packageRepository = dataSource.getRepository(Package);
-
+    const levelRepository = dataSource.getRepository(Level);
     // Create user
     const userData = {
       fullName: 'Himanshu Karnwal',
@@ -122,6 +119,225 @@ async function seed() {
       const pkg = packageRepository.create(data);
       const savedPkg = await packageRepository.save(pkg);
       console.log(`Package created with ID: ${savedPkg.id}`);
+    }
+
+    // Create levels
+    const LEVELS_DATA = [
+      {
+        title: 'Executive',
+        appraisalBonus: 0,
+        passiveIncomePercentage: 5,
+        conditions: [],
+      },
+      {
+        title: 'Sales Executive',
+        appraisalBonus: 0,
+        passiveIncomePercentage: 3,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'DIRECT',
+            value: 1_500,
+          },
+        ],
+      },
+      {
+        title: 'Sales Manager',
+        appraisalBonus: 0,
+        passiveIncomePercentage: 2,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 10_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 2,
+          },
+        ],
+      },
+      {
+        title: 'Branch Manager',
+        appraisalBonus: 200,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 30_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 3,
+          },
+        ],
+      },
+      {
+        title: 'Zonal Manager',
+        appraisalBonus: 500,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 70_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 4,
+          },
+        ],
+      },
+      {
+        title: 'Regional Manager',
+        appraisalBonus: 1_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 170_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 5,
+          },
+        ],
+      },
+      {
+        title: 'Country Head',
+        appraisalBonus: 2000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 370_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 6,
+          },
+        ],
+      },
+      {
+        title: 'Global Head',
+        appraisalBonus: 3_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 770_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 7,
+          },
+        ],
+      },
+      {
+        title: 'Global Director',
+        appraisalBonus: 4_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 1_370_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 8,
+          },
+        ],
+      },
+      {
+        title: 'Global President',
+        appraisalBonus: 5_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'BUSINESS',
+            scope: 'NETWORK',
+            value: 2_120_000,
+          },
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 9,
+          },
+        ],
+      },
+      {
+        title: 'Global Community',
+        appraisalBonus: 8_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 10,
+          },
+        ],
+      },
+      {
+        title: 'Global Trust',
+        appraisalBonus: 10_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 11,
+          },
+        ],
+      },
+      {
+        title: 'Global Management',
+        appraisalBonus: 15_000,
+        passiveIncomePercentage: 1,
+        conditions: [
+          {
+            type: 'LEVELS',
+            scope: 'NETWORK',
+            value: 2,
+            level: 12,
+          },
+        ],
+      },
+    ];
+
+    for (const idx in LEVELS_DATA) {
+      const levelData = LEVELS_DATA[idx];
+
+      const level = levelRepository.create({
+        ...levelData,
+        id: Number(idx) + 1,
+        hierarchy: Number(idx) + 1,
+        conditions: JSON.stringify(levelData.conditions),
+      });
+
+      await levelRepository.save(level);
+      console.log(`Level ${level.title} created with ID: ${level.id}`);
     }
   } catch (error) {
     console.error('Error seeding database:', error);

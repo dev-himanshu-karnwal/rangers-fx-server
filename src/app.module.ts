@@ -13,6 +13,7 @@ import { EmailModule } from './core/services/email/email.module';
 import { TransactionModule } from './modules/transactions/transaction.module';
 import { BotsModule } from './modules/bots/bots.module';
 import { PackagesModule } from './modules/packages/packages.module';
+import { LevelsModule } from './modules/levels/levels.module';
 import path from 'path';
 import fs from 'fs';
 
@@ -42,6 +43,7 @@ import fs from 'fs';
     TransactionModule,
     BotsModule,
     PackagesModule,
+    LevelsModule,
   ],
   controllers: [AppController],
   providers: [
