@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { BotActivation } from './entities';
 import { BotActivationResponseDto, ActivateBotDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
@@ -99,6 +99,29 @@ export class BotsService {
     }
     return ApiResponse.success('Active bot activation found', {
       botActivation: BotActivationResponseDto.fromEntity(botActivation),
+    });
+  }
+
+  /**
+   * Gets the user's bots and returns them as DTOs.
+   * @param user - User to get the bots for
+   * @param status - Status of the bots to get
+   * @returns Bots if found, null otherwise
+   */
+  async getUserBots(
+    user: User,
+    status: BotActivationStatus | undefined,
+  ): Promise<ApiResponse<{ bots: BotActivationResponseDto[] }>> {
+    const where: FindOptionsWhere<BotActivation> = { userId: user.id };
+    if (status) where.status = status;
+    const bots = await this.botActivationRepository.find({ where });
+
+    if (bots.length === 0) {
+      throw new NotFoundException('No bots found for the user');
+    }
+
+    return ApiResponse.success('User bots found', {
+      bots: bots.map((bot) => BotActivationResponseDto.fromEntity(bot)),
     });
   }
 
