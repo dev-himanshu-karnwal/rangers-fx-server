@@ -1,5 +1,4 @@
 import { QueryParamsDto, ParsedQueryParams } from './query-params.dto';
-import { PaginatedResult } from '../pagination/pagination-query.dto';
 
 /**
  * Helper class to parse and transform query parameters into TypeORM-compatible options.

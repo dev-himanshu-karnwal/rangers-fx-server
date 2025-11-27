@@ -15,8 +15,7 @@ import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
 import { ApiResponse } from 'src/common/response/api.response';
 import { Wallet } from '../wallets/entities/wallet.entity';
-import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
-import { PaginationHelper } from '../../common/pagination/pagination.helper';
+import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
 
 /**
  * TransactionService provides business logic for handling transactions such as creation,
@@ -48,22 +47,88 @@ export class TransactionService {
    * @returns ApiResponse containing an array of TransactionResponseDto
    */
   async getAllTransactions(
-    pagination?: PaginationQueryDto,
-  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: TransactionResponseDto[] }>> {
-    const { skip, take, order } = PaginationHelper.build(pagination ?? new PaginationQueryDto());
-    // Preserve existing relations and logic while adding pagination & dynamic ordering
-    const [transactions, total] = await this.transactionRepository.findAndCount({
-      relations: ['toWallet', 'fromWallet', 'initiator', 'statusUpdater'],
-      order,
-      skip,
-      take,
-    });
-    return ApiResponse.success('Transactions retrieved successfully', {
+    user: User,
+    query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: { total: number; page: number; limit: number };
+      transactions: TransactionResponseDto[];
+    }>
+  > {
+    const parsed = QueryParamsHelper.parse(query);
+    const userWallet = await this.walletService.getUserWalletEntity(user.id);
+    const walletId = userWallet.id;
+
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('transaction')
+      .where('(transaction.fromWalletId = :walletId OR transaction.toWalletId = :walletId)', { walletId });
+
+    const metadata = this.transactionRepository.metadata;
+    const { filters } = parsed;
+
+    queryBuilder.select([
+      'transaction.id',
+      'transaction.fromWalletId',
+      'transaction.toWalletId',
+      'transaction.type',
+      'transaction.status',
+      'transaction.createdAt',
+      'transaction.description',
+    ]);
+
+    if (filters.status) {
+      queryBuilder.andWhere('transaction.status = :status', { status: filters.status });
+    }
+
+    if (filters.type) {
+      queryBuilder.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    if (filters.direction) {
+      const direction = String(filters.direction).toLowerCase();
+      if (direction === 'incoming') {
+        queryBuilder.andWhere('transaction.toWalletId = :walletId', { walletId });
+      } else if (direction === 'outgoing') {
+        queryBuilder.andWhere('transaction.fromWalletId = :walletId', { walletId });
+      }
+    }
+
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('transaction.createdAt <= :endDate', { endDate });
+    }
+
+    const orderEntries = Object.entries(parsed.order);
+    if (orderEntries.length === 0) {
+      queryBuilder.addOrderBy('transaction.createdAt', 'DESC');
+    } else {
+      for (const [field, direction] of orderEntries) {
+        const column = metadata.findColumnWithPropertyName(field);
+        if (!column) {
+          continue;
+        }
+        queryBuilder.addOrderBy(`transaction.${column.propertyName}`, direction);
+      }
+    }
+
+    queryBuilder.skip(parsed.skip).take(parsed.take);
+    const [transactions, total] = await queryBuilder.getManyAndCount();
+
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      transactions.map((transaction) => TransactionResponseDto.fromEntity(transaction)),
       total,
-      page: pagination?.page ?? 1,
-      limit: pagination?.limit ?? 10,
-      data: transactions.map((t) => TransactionResponseDto.fromEntity(t)),
-    });
+      parsed,
+      'transactions',
+    );
+
+    return ApiResponse.success('Transactions retrieved successfully', result);
   }
 
   /**

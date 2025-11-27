@@ -25,7 +25,8 @@ import { User } from '../user/entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { Admin } from 'src/common/decorators/admin.decorator';
-import { PaginationQueryDto } from '../../common/pagination/pagination-query.dto';
+import { QueryParamsDto } from 'src/common/query';
+import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
 
 /**
  * Transaction controller - handles transaction-related HTTP requests
@@ -51,15 +52,20 @@ export class TransactionController {
   }
 
   /**
-   * Retrieve all transactions in the system, ordered by creation date (newest first).
-   * @returns ApiResponse containing an array of TransactionResponseDto
+   * Retrieves paginated transactions where the current user's wallet participated.
    */
-  @Get('all')
+  @Get()
   @HttpCode(HttpStatus.OK)
   async getAllTransactions(
-    @Query() pagination: PaginationQueryDto,
-  ): Promise<ApiResponse<{ total: number; page: number; limit: number; data: TransactionResponseDto[] }>> {
-    return this.transactionService.getAllTransactions(pagination);
+    @CurrentUser() user: User,
+    @Query(new QueryValidationPipe()) query: QueryParamsDto,
+  ): Promise<
+    ApiResponse<{
+      meta: { total: number; page: number; limit: number };
+      transactions: TransactionResponseDto[];
+    }>
+  > {
+    return this.transactionService.getAllTransactions(user, query);
   }
 
   /**
