@@ -17,7 +17,7 @@ export class LevelsService {
   ) {}
 
   /**
-   * Retrieves all levels with pagination, sorting, and filtering.
+   * Retrieves all levels with pagination, sorting, and filtering for API response.
    */
   async getAll(query: QueryParamsDto): Promise<
     ApiResponse<{
@@ -29,6 +29,25 @@ export class LevelsService {
       levels: LevelResponseDto[];
     }>
   > {
+    const { levels, total, parsed } = await this.getAllRaw(query);
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
+      levels.map((level) => LevelResponseDto.fromEntity(level)),
+      total,
+      parsed,
+      'levels',
+    );
+    return ApiResponse.success('Levels retrieved successfully', result);
+  }
+
+  /**
+   * Reusable method to get all levels with filter, sorting, and pagination logic.
+   * Returns { levels, total, parsed }
+   */
+  async getAllRaw(query: QueryParamsDto): Promise<{
+    levels: Level[];
+    total: number;
+    parsed: ReturnType<typeof QueryParamsHelper.parse>;
+  }> {
     // Parse query parameters
     const parsed = QueryParamsHelper.parse(query);
 
@@ -103,14 +122,7 @@ export class LevelsService {
     // Execute query
     const [levels, total] = await queryBuilder.getManyAndCount();
 
-    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
-      levels.map((level) => LevelResponseDto.fromEntity(level)),
-      total,
-      parsed,
-      'levels',
-    );
-
-    return ApiResponse.success('Levels retrieved successfully', result);
+    return { levels, total, parsed };
   }
 
   /**
@@ -169,11 +181,27 @@ export class LevelsService {
     return this.userLevelRepository.save(userLevel);
   }
 
+  /**
+   * Retrieves a level entity by hierarchy.
+   * @param hierarchy - The hierarchy number to look for
+   * @returns Level entity if found, otherwise throws NotFoundException
+   */
   private async getLevelEntityByHierarchy(hierarchy: number): Promise<Level> {
     const level = await this.levelRepository.findOneBy({ hierarchy });
     if (!level) {
       throw new NotFoundException(`Level with hierarchy ${hierarchy} not found`);
     }
     return level;
+  }
+
+  /**
+   * Retrieves the current level for a user.
+   * @param userId - The user ID to look for
+   * @returns User level entity if found, otherwise null
+   */
+  async getUserCurrentLevel(userId: number): Promise<UserLevel | null> {
+    return await this.userLevelRepository.findOne({
+      where: { userId, endDate: IsNull() },
+    });
   }
 }
