@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsSelect, FindOptionsWhere, Not, Repository } from 'typeorm';
 import { UserClosure } from './entities/closure.entity';
 
 @Injectable()
@@ -125,16 +125,37 @@ export class UserClosureService {
   }
 
   /**
-   * Get all ancestors of a user (including self row).
+   * Get all ancestors of a user (excluding self row if excludeSelf is true).
    * Returns array of UserClosure entries ordered by depth ascending
    * Note: depth here is distance from ancestor -> descendant (so ancestor depth increases as you go up)
    */
-  async getAllAscendentsOfUser(userId: number): Promise<UserClosure[]> {
+  async getAllAscendentsOfUser(
+    userId: number,
+    excludeSelf: boolean = false,
+    select: FindOptionsSelect<UserClosure> = {},
+  ): Promise<UserClosure[]> {
     if (!userId) throw new BadRequestException('userId is required');
 
+    const whereClause: FindOptionsWhere<UserClosure> = { descendantId: userId };
+    if (excludeSelf) {
+      whereClause.depth = Not(0);
+    }
+
+    let selectClause: FindOptionsSelect<UserClosure> = {
+      depth: true,
+      ancestorId: true,
+      descendantId: true,
+      rootChildId: true,
+      updatedAt: true,
+    };
+    if (select) {
+      selectClause = { ...selectClause };
+    }
+
     return this.userClosureRepository.find({
-      where: { descendantId: userId },
+      where: whereClause,
       order: { depth: 'ASC', ancestorId: 'ASC' },
+      select: selectClause,
     });
   }
 

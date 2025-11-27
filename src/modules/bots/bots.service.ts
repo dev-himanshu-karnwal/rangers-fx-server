@@ -256,6 +256,25 @@ export class BotsService {
   }
 
   /**
+   * Increases the incomeReceived field of the user's active bot.
+   * @param userId - User ID whose active bot should be updated
+   * @param amount - Amount to add to incomeReceived
+   */
+  async increaseActiveBotIncomeReceived(userId: number, amount: number): Promise<void> {
+    if (amount <= 0) {
+      return;
+    }
+
+    const bot = await this.getActiveBotActivation(userId);
+    if (!bot) {
+      return;
+    }
+
+    bot.incomeReceived = (bot.incomeReceived || 0) + amount;
+    await this.saveBot(bot);
+  }
+
+  /**
    * Checks if bot is expired based on reference date and expiration period
    * @param referenceDate - Reference date (bot creation or last package purchase)
    * @param expirationMonths - Number of months until expiration

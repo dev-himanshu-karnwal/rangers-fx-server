@@ -177,6 +177,9 @@ export class UserPackageService {
     // Create user package
     const userPackage = await this.createUserPackage(user, pkg, bot, purchasePackageDto.investmentAmount);
 
+    // Update domain entities that depend on the purchase success
+    await this.userPackagePostPurchaseService.handlePostPurchaseSuccess(user, bot);
+
     // Handle package purchase transaction (93% to company, 7% to upline)
     await this.passiveIncomeService.handlePackagePurchaseTransaction(
       user,
@@ -189,9 +192,6 @@ export class UserPackageService {
 
     // Increment business done amount
     await this.userService.incrementBusinessDone(user, purchasePackageDto.investmentAmount);
-
-    // Update domain entities that depend on the purchase success
-    await this.userPackagePostPurchaseService.handlePostPurchaseSuccess(user, bot);
 
     // Return response with relations
     const userPackageWithRelations = await this.getUserPackageWithRelations(userPackage.id);

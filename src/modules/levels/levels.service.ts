@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Level, UserLevel } from './entities';
 import { ApiResponse } from 'src/common/response/api.response';
 import { LevelResponseDto } from './dto';
@@ -202,6 +202,30 @@ export class LevelsService {
   async getUserCurrentLevel(userId: number): Promise<UserLevel | null> {
     return await this.userLevelRepository.findOne({
       where: { userId, endDate: IsNull() },
+      relations: ['level'],
+    });
+  }
+
+  /**
+   * Retrieves all levels ordered by hierarchy ascending.
+   */
+  async getAllLevelsOrdered(): Promise<Level[]> {
+    return this.levelRepository.find({
+      order: { hierarchy: 'ASC' },
+    });
+  }
+
+  /**
+   * Retrieves active levels (current assignments) for the provided user IDs.
+   */
+  async getActiveLevelsForUsers(userIds: number[]): Promise<UserLevel[]> {
+    if (!userIds.length) {
+      return [];
+    }
+
+    return this.userLevelRepository.find({
+      where: { userId: In(userIds), endDate: IsNull() },
+      relations: ['level'],
     });
   }
 }
