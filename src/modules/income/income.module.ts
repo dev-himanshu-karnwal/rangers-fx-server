@@ -4,10 +4,12 @@ import { BotIncomeService, PassiveIncomeService, TradingIncomeService, Appraisal
 import { PackagesModule } from '../packages/packages.module';
 import { BotsModule } from '../bots/bots.module';
 import { UserModule } from '../user/user.module';
+import { WalletModule } from '../wallets/wallet.module';
+import { TransactionModule } from '../transactions/transaction.module';
 
 @Module({
-  imports: [forwardRef(() => PackagesModule), BotsModule, UserModule],
+  imports: [forwardRef(() => PackagesModule), BotsModule, UserModule, WalletModule, TransactionModule],
   providers: [IncomeService, BotIncomeService, PassiveIncomeService, TradingIncomeService, AppraisalIncomeService],
-  exports: [IncomeService, BotIncomeService],
+  exports: [IncomeService, BotIncomeService, PassiveIncomeService],
 })
 export class IncomeModule {}

@@ -10,16 +10,15 @@ import { User } from '../../user/entities/user.entity';
 import { WalletService } from '../../wallets/wallet.service';
 import { TransactionService } from '../../transactions/transaction.service';
 import { BotsService } from '../../bots/bots.service';
-import { TransactionStatus, TransactionType } from 'src/modules/transactions/enums';
 import { PACKAGES_CONSTANTS } from '../constants';
 import { BotActivation } from '../../bots/entities/bot-activation.entity';
 import { UserService } from 'src/modules/user/user.service';
 import { PackagesService } from '../packages.service';
-import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
 import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
 import { UserPackageStatus } from '../enums/user-package-status.enum';
+import { PassiveIncomeService } from 'src/modules/income/services/passive-income.service';
 
 /**
  * User Package Service - handles user package purchase operations
@@ -36,6 +35,7 @@ export class UserPackageService {
     private readonly botsService: BotsService,
     private readonly userService: UserService,
     private readonly userPackagePostPurchaseService: UserPackagePostPurchaseService,
+    private readonly passiveIncomeService: PassiveIncomeService,
   ) {}
 
   /**
@@ -158,10 +158,9 @@ export class UserPackageService {
     // Get and validate wallets
     const { userWallet, companyIncomeWallet } = await this.getAndValidateWallets(user.id);
 
-    // Validate wallet balance (convert to DTO for transaction service)
-    const userWalletDto = new WalletResponseDto(userWallet);
+    // Validate wallet balance
     await this.transactionService.ensureSufficientBalanceWithPendingTransactions(
-      userWalletDto,
+      userWallet,
       purchasePackageDto.investmentAmount,
     );
 
@@ -178,23 +177,11 @@ export class UserPackageService {
     // Create user package
     const userPackage = await this.createUserPackage(user, pkg, bot, purchasePackageDto.investmentAmount);
 
-    // Create transaction record
-    await this.transactionService.createTransaction({
-      fromWalletId: userWallet.id,
-      toWalletId: companyIncomeWallet.id,
-      amount: purchasePackageDto.investmentAmount,
-      description: `Purchase of package ${pkg.title} by ${user.fullName} for ${purchasePackageDto.investmentAmount}`,
-      type: TransactionType.PURCHASE_PACKAGE,
-      status: TransactionStatus.APPROVED,
-      entityId: userPackage.id,
-      initiator: user,
-      statusUpdatedAt: new Date(),
-      statusUpdatedBy: user.id,
-      statusUpdater: user,
-    });
-
-    // Update wallet balances
-    await this.walletService.transferBetweenWallets(
+    // Handle package purchase transaction (93% to company, 7% to upline)
+    await this.passiveIncomeService.handlePackagePurchaseTransaction(
+      user,
+      pkg,
+      userPackage,
       userWallet,
       companyIncomeWallet,
       purchasePackageDto.investmentAmount,
