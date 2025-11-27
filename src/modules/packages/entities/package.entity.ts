@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { PackageType } from '../enums';
-import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 
 @Entity('packages')
 export class Package {

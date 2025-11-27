@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { Level, UserLevel } from './entities';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { LevelResponseDto } from './dto';
 import { User } from '../user/entities/user.entity';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 
 @Injectable()
 export class LevelsService {

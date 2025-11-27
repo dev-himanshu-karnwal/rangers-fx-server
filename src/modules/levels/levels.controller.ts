@@ -1,9 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { LevelsService } from './levels.service';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { LevelResponseDto } from './dto';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
-import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
+import { QueryParamsDto } from '../../common/query';
+import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 
 @Controller('levels')
 export class LevelsController {

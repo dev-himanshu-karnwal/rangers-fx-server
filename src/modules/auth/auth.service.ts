@@ -10,7 +10,7 @@ import {
   VerifyOtpDto,
   CompleteSignupDto,
 } from './dto';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import type { Response } from 'express';
 import { AuthLoginService, AuthPasswordResetService, AuthSignupService, AuthTokenService } from './services';
 

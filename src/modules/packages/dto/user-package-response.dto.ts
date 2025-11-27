@@ -1,6 +1,6 @@
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
 import { UserPackage } from '../entities/user-package.entity';
-import { UserResponseDto } from 'src/modules/user/dto';
+import { UserResponseDto } from '../../user/dto';
 import { PackageResponseDto } from './package-response.dto';
 import { UserPackageStatus } from '../enums';
 

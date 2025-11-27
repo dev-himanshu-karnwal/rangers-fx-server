@@ -12,9 +12,9 @@ import {
   VerifyOtpDto,
   CompleteSignupDto,
 } from './dto';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import type { Response } from 'express';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../user/entities';
 import { UserResponseDto } from '../user/dto';
 

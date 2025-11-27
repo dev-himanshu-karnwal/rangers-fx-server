@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { User } from 'src/modules/user/entities/user.entity';
-import { Package } from 'src/modules/packages/entities/package.entity';
-import { UserPackage } from 'src/modules/packages/entities/user-package.entity';
-import { Wallet } from 'src/modules/wallets/entities/wallet.entity';
-import { WalletService } from 'src/modules/wallets/wallet.service';
-import { TransactionService } from 'src/modules/transactions/transaction.service';
-import { TransactionStatus, TransactionType } from 'src/modules/transactions/enums';
+import { User } from '../../user/entities/user.entity';
+import { Package } from '../../packages/entities/package.entity';
+import { UserPackage } from '../../packages/entities/user-package.entity';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { WalletService } from '../../wallets/wallet.service';
+import { TransactionService } from '../../transactions/transaction.service';
+import { TransactionStatus, TransactionType } from '../../transactions/enums/transaction.enum';
 import { INCOME_CONSTANTS } from '../constants/income.constants';
-import { UserClosureService } from 'src/modules/user/closure/closure.service';
-import { LevelsService } from 'src/modules/levels/levels.service';
-import { Level } from 'src/modules/levels/entities/level.entity';
-import { UserLevel } from 'src/modules/levels/entities/user-level.entity';
-import { BotsService } from 'src/modules/bots/bots.service';
+import { UserClosureService } from '../../user/closure/closure.service';
+import { LevelsService } from '../../levels/levels.service';
+import { Level } from '../../levels/entities/level.entity';
+import { UserLevel } from '../../levels/entities/user-level.entity';
+import { BotsService } from '../../bots/bots.service';
 
 /**
  * Passive Income Service - Handles all passive income calculation logic and package purchase transactions

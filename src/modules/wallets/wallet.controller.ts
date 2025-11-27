@@ -1,11 +1,11 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { WalletResponseDto } from './dto';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../user/entities';
-import { AdminGuard } from 'src/common/guards/admin.guard';
-import { Admin } from 'src/common/decorators/admin.decorator';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { Admin } from '../../common/decorators/admin.decorator';
 
 /**
  * Wallet controller handling HTTP requests for wallet operations

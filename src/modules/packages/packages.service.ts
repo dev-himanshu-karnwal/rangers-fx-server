@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Package } from './entities';
 import { PackageResponseDto } from './dto';
-import { ApiResponse } from 'src/common/response/api.response';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { ApiResponse } from '../../common/response/api.response';
+import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 
 @Injectable()
 export class PackagesService {

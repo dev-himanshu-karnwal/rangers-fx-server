@@ -1,8 +1,8 @@
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
 import { BotActivationStatus } from '../enums';
 import { BotActivation } from '../entities';
-import { UserResponseDto } from 'src/modules/user/dto';
-import { WalletResponseDto } from 'src/modules/wallets/dto';
+import { UserResponseDto } from '../../user/dto';
+import { WalletResponseDto } from '../../wallets/dto';
 
 @Exclude()
 export class BotActivationResponseDto {

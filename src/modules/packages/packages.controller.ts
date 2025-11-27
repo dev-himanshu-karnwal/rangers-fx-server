@@ -1,12 +1,12 @@
 import { Controller, Get, Param, ParseIntPipe, Post, Body, Query } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { PackageResponseDto, PurchasePackageDto, UserPackageResponseDto } from './dto';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { User } from '../user/entities/user.entity';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserPackageService } from './services';
-import { QueryParamsDto } from 'src/common/query';
-import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
+import { QueryParamsDto } from '../../common/query';
+import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 
 @Controller('packages')
 export class PackagesController {

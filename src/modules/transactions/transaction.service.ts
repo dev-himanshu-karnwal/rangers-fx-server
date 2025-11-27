@@ -13,9 +13,9 @@ import {
 import { TransactionStatus, TransactionType } from './enums/transaction.enum';
 import { User } from '../user/entities';
 import { WalletService } from '../wallets/wallet.service';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { Wallet } from '../wallets/entities/wallet.entity';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 
 /**
  * TransactionService provides business logic for handling transactions such as creation,

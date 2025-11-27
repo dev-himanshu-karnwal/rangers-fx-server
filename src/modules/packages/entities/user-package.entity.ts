@@ -8,10 +8,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from 'src/modules/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 import { Package } from './package.entity';
-import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
-import { BotActivation } from 'src/modules/bots/entities/bot-activation.entity';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
+import { BotActivation } from '../../bots/entities/bot-activation.entity';
 import { UserPackageStatus } from '../enums/user-package-status.enum';
 
 @Entity('user_packages')

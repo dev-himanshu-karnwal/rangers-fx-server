@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 
 @Entity('levels')
 export class Level {

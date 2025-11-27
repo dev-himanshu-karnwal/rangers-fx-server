@@ -5,7 +5,7 @@ import { ConfigService } from '../../../config/config.service';
 import { OtpService } from '../../otp/otp.service';
 import { ForgotPasswordDto, ResetPasswordDto } from '../dto';
 import { OtpPurpose } from '../../otp/enums/otp.enum';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../../common/response/api.response';
 
 /**
  * Auth Password Reset Service - handles password reset operations

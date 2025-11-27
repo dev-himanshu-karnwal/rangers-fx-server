@@ -7,7 +7,7 @@ import { ConfigService } from '../../../config/config.service';
 import { OtpService } from '../../otp/otp.service';
 import { LoginInitiateDto, CompleteLoginDto, AuthResponseDto } from '../dto';
 import { OtpPurpose } from '../../otp/enums/otp.enum';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../../common/response/api.response';
 import type { Response } from 'express';
 import { UserStatus } from '../../user/enums/user.enum';
 import { AuthTokenService } from './auth-token.service';

@@ -2,11 +2,11 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { BotsService } from './bots.service';
 import { ActivateBotDto, BotActivationResponseDto } from './dto';
 import { User } from '../user/entities';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { ApiResponse } from 'src/common/response/api.response';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ApiResponse } from '../../common/response/api.response';
 import { TransactionResponseDto } from '../transactions/dto';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
-import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
+import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
+import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 
 @Controller('bots')
 export class BotsController {

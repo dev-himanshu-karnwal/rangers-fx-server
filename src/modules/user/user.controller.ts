@@ -14,9 +14,9 @@ import { UserService } from './user.service';
 import { ChangeMailDto, EmailVerifyDTO, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from './entities';
-import { ApiResponse } from 'src/common/response/api.response';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { Public } from 'src/common/decorators/public.decorator';
+import { ApiResponse } from '../../common/response/api.response';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { QueryParamsDto } from '../../common/query';
 import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 

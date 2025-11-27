@@ -12,7 +12,7 @@ import {
 import { TransactionStatus, TransactionType } from '../enums/transaction.enum';
 import { Wallet } from '../../wallets/entities/wallet.entity';
 import { User } from '../../user/entities/user.entity';
-import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 
 /**
  * Transaction entity representing a transaction in the system.

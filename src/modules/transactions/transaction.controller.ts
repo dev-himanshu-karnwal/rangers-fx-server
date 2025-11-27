@@ -20,13 +20,13 @@ import {
   WithdrawCompanyTransactionDto,
   WithdrawPersonalTransactionDto,
 } from './dto';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../user/entities';
-import { ApiResponse } from 'src/common/response/api.response';
-import { AdminGuard } from 'src/common/guards/admin.guard';
-import { Admin } from 'src/common/decorators/admin.decorator';
-import { QueryParamsDto } from 'src/common/query';
-import { QueryValidationPipe } from 'src/common/pipes/query-validation.pipe';
+import { ApiResponse } from '../../common/response/api.response';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { Admin } from '../../common/decorators/admin.decorator';
+import { QueryParamsDto } from '../../common/query';
+import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
 
 /**
  * Transaction controller - handles transaction-related HTTP requests

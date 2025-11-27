@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { WalletType } from '../enums/wallet.enum';
 import { User } from '../../user/entities/user.entity';
-import { decimalTransformer } from 'src/common/transformers/decimal.transformer';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 
 /**
  * Wallet entity representing a wallet in the system.

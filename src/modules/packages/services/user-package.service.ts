@@ -5,20 +5,20 @@ import { UserPackage } from '../entities/user-package.entity';
 import { Package } from '../entities/package.entity';
 import { PurchasePackageDto } from '../dto/purchase-package.dto';
 import { UserPackageResponseDto } from '../dto/user-package-response.dto';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../../common/response/api.response';
 import { User } from '../../user/entities/user.entity';
 import { WalletService } from '../../wallets/wallet.service';
 import { TransactionService } from '../../transactions/transaction.service';
 import { BotsService } from '../../bots/bots.service';
 import { PACKAGES_CONSTANTS } from '../constants';
 import { BotActivation } from '../../bots/entities/bot-activation.entity';
-import { UserService } from 'src/modules/user/user.service';
+import { UserService } from '../../user/user.service';
 import { PackagesService } from '../packages.service';
-import { Wallet } from 'src/modules/wallets/entities';
+import { Wallet } from '../../wallets/entities/wallet.entity';
 import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { QueryParamsDto, QueryParamsHelper } from '../../../common/query';
 import { UserPackageStatus } from '../enums/user-package-status.enum';
-import { PassiveIncomeService } from 'src/modules/income/services/passive-income.service';
+import { PassiveIncomeService } from '../../income/services/passive-income.service';
 
 /**
  * User Package Service - handles user package purchase operations

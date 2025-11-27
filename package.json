@@ -15,7 +15,12 @@
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "prepare": "husky",
     "seed:development": "ts-node database/seeds/seed.development.ts",
-    "seed:production": "ts-node database/seeds/seed.production.ts"
+    "seed:production": "ts-node database/seeds/seed.production.ts",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d typeorm.config.ts",
+    "migration:create": "typeorm-ts-node-commonjs migration:create -d typeorm.config.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d typeorm.config.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d typeorm.config.ts"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [

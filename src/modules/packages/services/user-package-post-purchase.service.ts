@@ -1,11 +1,11 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { User } from 'src/modules/user/entities/user.entity';
-import { BotActivation } from 'src/modules/bots/entities/bot-activation.entity';
-import { BotsService } from 'src/modules/bots/bots.service';
-import { UserService } from 'src/modules/user/user.service';
-import { LevelsService } from 'src/modules/levels/levels.service';
-import { WorkRole } from 'src/modules/user/enums/user.enum';
-import { BotIncomeService } from 'src/modules/income/services/bot-income.service';
+import { User } from '../../user/entities/user.entity';
+import { BotActivation } from '../../bots/entities/bot-activation.entity';
+import { BotsService } from '../../bots/bots.service';
+import { UserService } from '../../user/user.service';
+import { LevelsService } from '../../levels/levels.service';
+import { WorkRole } from '../../user/enums/user.enum';
+import { BotIncomeService } from '../../income/services/bot-income.service';
 
 @Injectable()
 export class UserPackagePostPurchaseService {

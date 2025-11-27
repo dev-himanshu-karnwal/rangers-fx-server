@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { BotActivation } from './entities';
 import { BotActivationResponseDto, ActivateBotDto } from './dto';
-import { ApiResponse } from 'src/common/response/api.response';
+import { ApiResponse } from '../../common/response/api.response';
 import { BOT_CONSTANTS } from './constants';
 import { BotActivationStatus } from './enums';
 import { User } from '../user/entities';
@@ -14,7 +14,7 @@ import { TransactionResponseDto } from '../transactions/dto';
 import { TransactionService } from '../transactions/transaction.service';
 import { UserService } from '../user/user.service';
 import { WalletResponseDto } from '../wallets/dto';
-import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 
 @Injectable()
 export class BotsService {
