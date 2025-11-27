@@ -50,7 +50,7 @@ export class UserUpdateService {
   }
 
   /**
-   * Save user
+   * Save user entity
    * @param user - User to save
    * @returns Saved user
    */
@@ -78,6 +78,17 @@ export class UserUpdateService {
    */
   async inactivateUser(user: User): Promise<User> {
     user.status = UserStatus.INACTIVE;
+    return await this.saveUser(user);
+  }
+
+  /**
+   * Increments the business done amount for a user
+   * @param user - User entity to increment business done amount
+   * @param amount - Amount to increment
+   * @returns Updated user entity
+   */
+  async incrementBusinessDone(user: User, amount: number): Promise<User> {
+    user.businessDone = (user.businessDone ?? 0) + amount;
     return await this.saveUser(user);
   }
 }

@@ -200,6 +200,9 @@ export class UserPackageService {
       purchasePackageDto.investmentAmount,
     );
 
+    // Increment business done amount
+    await this.userService.incrementBusinessDone(user, purchasePackageDto.investmentAmount);
+
     // Update domain entities that depend on the purchase success
     await this.userPackagePostPurchaseService.handlePostPurchaseSuccess(user, bot);
 
