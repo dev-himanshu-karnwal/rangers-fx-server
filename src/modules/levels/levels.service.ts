@@ -42,6 +42,8 @@ export class LevelsService {
   /**
    * Reusable method to get all levels with filter, sorting, and pagination logic.
    * Returns { levels, total, parsed }
+   *
+   * NOTE: Default order is by hierarchy ASC (not createdAt).
    */
   async getAllRaw(query: QueryParamsDto): Promise<{
     levels: Level[];
@@ -50,6 +52,12 @@ export class LevelsService {
   }> {
     // Parse query parameters
     const parsed = QueryParamsHelper.parse(query);
+
+    // Override the default order if not provided by client
+    // Remove createdAt from parsed.order if it's only there due to QueryParamsHelper's default
+    if (!query?.order || Object.keys(query.order).length === 0) {
+      parsed.order = { hierarchy: 'ASC' };
+    }
 
     // Build query builder for filtering and sorting
     const queryBuilder = this.levelRepository.createQueryBuilder('level');
@@ -112,7 +120,7 @@ export class LevelsService {
         }
       }
     } else {
-      // Default sorting by hierarchy
+      // (Should not get here as we force default above but keep for safety)
       queryBuilder.orderBy('level.hierarchy', 'ASC');
     }
 

@@ -17,6 +17,7 @@ import type { Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { User } from '../user/entities';
 import { UserResponseDto } from '../user/dto';
+
 /**
  * Auth controller handling authentication endpoints
  * All routes are public by default (no JWT required)
