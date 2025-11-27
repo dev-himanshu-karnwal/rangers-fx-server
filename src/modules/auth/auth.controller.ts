@@ -132,7 +132,7 @@ export class AuthController {
    * @returns Authentication response with current user info
    */
   @Get('me')
-  getMe(@CurrentUser() user: User) {
+  async getMe(@CurrentUser() user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
     return this.userService.getMe(user);
   }
 }

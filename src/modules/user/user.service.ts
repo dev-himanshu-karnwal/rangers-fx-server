@@ -134,7 +134,7 @@ export class UserService {
    * @param user - User entity
    * @returns User profile response
    */
-  getMe(user: User): ApiResponse<{ user: UserResponseDto }> {
+  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
     return this.userQueryService.getMe(user);
   }
 

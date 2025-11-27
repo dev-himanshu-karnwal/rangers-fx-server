@@ -1,6 +1,8 @@
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
 import { UserStatus, UserRole, WorkRole } from '../enums/user.enum';
 import { User } from '../entities/user.entity';
+import { Level } from '../../levels/entities';
+import { LevelResponseDto } from '../../levels/dto';
 
 /**
  * DTO for user response (excludes sensitive information)
@@ -46,6 +48,9 @@ export class UserResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  activeLevel: LevelResponseDto | null;
+
   constructor(partial: Partial<UserResponseDto>) {
     Object.assign(this, partial);
   }
@@ -55,7 +60,9 @@ export class UserResponseDto {
    * @param user - User entity to transform
    * @returns UserResponseDto with only exposed fields
    */
-  static fromEntity(user: User): UserResponseDto {
-    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+  static fromEntity(user: User, activeLevel?: Level | null): UserResponseDto {
+    const dto = plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+    dto.activeLevel = activeLevel ? LevelResponseDto.fromEntity(activeLevel) : null;
+    return dto;
   }
 }

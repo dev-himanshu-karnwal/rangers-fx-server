@@ -18,6 +18,7 @@ import { WalletModule } from '../wallets/wallet.module';
 import { OtpModule } from '../otp/otp.module';
 import { EmailModule } from 'src/core/services/email/email.module';
 import { ConfigModule } from 'src/config/config.module';
+import { LevelsModule } from '../levels/levels.module';
 
 /**
  * User module - handles user-related operations
@@ -31,6 +32,7 @@ import { ConfigModule } from 'src/config/config.module';
     OtpModule,
     EmailModule,
     ConfigModule,
+    forwardRef(() => LevelsModule),
   ],
   controllers: [UserController],
   providers: [

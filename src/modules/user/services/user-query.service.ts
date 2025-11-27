@@ -5,6 +5,7 @@ import { User } from '../entities/user.entity';
 import { UserResponseDto } from '../dto';
 import { ApiResponse } from '../../../common/response/api.response';
 import { QueryParamsDto, QueryParamsHelper } from '../../../common/query';
+import { LevelsService } from '../../levels/levels.service';
 
 /**
  * User Query Service - handles all user query/find operations
@@ -15,6 +16,7 @@ export class UserQueryService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly levelsService: LevelsService,
   ) {}
 
   /**
@@ -27,7 +29,7 @@ export class UserQueryService {
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return UserResponseDto.fromEntity(user);
+    return this.mapToUserResponse(user);
   }
 
   /**
@@ -40,7 +42,7 @@ export class UserQueryService {
     if (!user) {
       throw new NotFoundException(`User with referral code ${referralCode} not found`);
     }
-    return UserResponseDto.fromEntity(user);
+    return this.mapToUserResponse(user);
   }
 
   /**
@@ -220,7 +222,13 @@ export class UserQueryService {
    * @param user - User entity
    * @returns User profile response
    */
-  getMe(user: User): ApiResponse<{ user: UserResponseDto }> {
-    return ApiResponse.success('User profile fetched successfully', { user: UserResponseDto.fromEntity(user) });
+  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    const userResponse = await this.mapToUserResponse(user);
+    return ApiResponse.success('User profile fetched successfully', { user: userResponse });
+  }
+
+  private async mapToUserResponse(user: User): Promise<UserResponseDto> {
+    const activeLevel = await this.levelsService.getUserCurrentLevel(user.id);
+    return UserResponseDto.fromEntity(user, activeLevel?.level ?? null);
   }
 }
