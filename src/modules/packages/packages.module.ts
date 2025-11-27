@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PackagesController } from './packages.controller';
 import { PackagesService } from './packages.service';
@@ -10,6 +10,7 @@ import { TransactionModule } from '../transactions/transaction.module';
 import { BotsModule } from '../bots/bots.module';
 import { UserModule } from '../user/user.module';
 import { LevelsModule } from '../levels/levels.module';
+import { IncomeModule } from '../income/income.module';
 
 @Module({
   imports: [
@@ -19,9 +20,10 @@ import { LevelsModule } from '../levels/levels.module';
     BotsModule,
     UserModule,
     LevelsModule,
+    forwardRef(() => IncomeModule),
   ],
   controllers: [PackagesController],
   providers: [PackagesService, UserPackageService, UserPackagePostPurchaseService],
-  exports: [PackagesService], // Export for use in other modules if needed
+  exports: [PackagesService, UserPackageService], // Export for use in other modules if needed
 })
 export class PackagesModule {}

@@ -15,7 +15,6 @@ import { TransactionService } from '../transactions/transaction.service';
 import { UserService } from '../user/user.service';
 import { WalletResponseDto } from '../wallets/dto';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
-import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Injectable()
 export class BotsService {

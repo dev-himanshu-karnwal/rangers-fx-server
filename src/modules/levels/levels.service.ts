@@ -6,7 +6,6 @@ import { ApiResponse } from 'src/common/response/api.response';
 import { LevelResponseDto } from './dto';
 import { User } from '../user/entities/user.entity';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
-import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Injectable()
 export class LevelsService {

@@ -19,6 +19,7 @@ import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
 import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
+import { UserPackageStatus } from '../enums/user-package-status.enum';
 
 /**
  * User Package Service - handles user package purchase operations
@@ -338,5 +339,17 @@ export class UserPackageService {
     }
 
     return userPackage;
+  }
+
+  /**
+   * Gets all in-progress user packages for a user
+   * @param userId - User ID
+   * @returns Array of user packages with package relation
+   */
+  async getUserInProgressPackages(userId: number): Promise<UserPackage[]> {
+    return await this.userPackageRepository.find({
+      where: { userId, status: UserPackageStatus.INPROGRESS },
+      relations: ['package'],
+    });
   }
 }

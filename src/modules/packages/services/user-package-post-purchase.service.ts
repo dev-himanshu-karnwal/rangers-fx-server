@@ -1,23 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserPackage } from '../entities/user-package.entity';
-import { UserPackageStatus } from '../enums';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { User } from 'src/modules/user/entities/user.entity';
 import { BotActivation } from 'src/modules/bots/entities/bot-activation.entity';
 import { BotsService } from 'src/modules/bots/bots.service';
 import { UserService } from 'src/modules/user/user.service';
 import { LevelsService } from 'src/modules/levels/levels.service';
 import { WorkRole } from 'src/modules/user/enums/user.enum';
+import { BotIncomeService } from 'src/modules/income/services/bot-income.service';
 
 @Injectable()
 export class UserPackagePostPurchaseService {
   constructor(
-    @InjectRepository(UserPackage)
-    private readonly userPackageRepository: Repository<UserPackage>,
     private readonly userService: UserService,
     private readonly botsService: BotsService,
     private readonly levelsService: LevelsService,
+    @Inject(forwardRef(() => BotIncomeService))
+    private readonly botIncomeService: BotIncomeService,
   ) {}
 
   /**
@@ -41,13 +38,7 @@ export class UserPackagePostPurchaseService {
   }
 
   private async updateCurrentUserBotMaxIncome(user: User, bot: BotActivation): Promise<void> {
-    const targetMaxIncome =
-      user.workRole === WorkRole.WORKER
-        ? await this.calculateWorkerBotMaxIncome(user.id)
-        : await this.calculateInvestorBotMaxIncome(user.id);
-
-    bot.maxIncome = targetMaxIncome;
-    await this.botsService.saveBot(bot);
+    await this.botIncomeService.updateBotMaxIncome(user, bot);
   }
 
   private async updateReferrerContext(user: User): Promise<void> {
@@ -70,30 +61,6 @@ export class UserPackagePostPurchaseService {
       return;
     }
 
-    const referrerMaxIncome = await this.calculateWorkerBotMaxIncome(referrer.id);
-    referrerBot.maxIncome = referrerMaxIncome;
-    await this.botsService.saveBot(referrerBot);
-  }
-
-  private async calculateInvestorBotMaxIncome(userId: number): Promise<number> {
-    const packages = await this.getUserInProgressPackages(userId);
-    return packages.reduce((sum, userPackage) => {
-      const packageReturnCapital = Number(userPackage.package?.returnCapital ?? 0);
-      return sum + Number(userPackage.investmentAmount ?? 0) * packageReturnCapital;
-    }, 0);
-  }
-
-  private async calculateWorkerBotMaxIncome(userId: number): Promise<number> {
-    const packages = await this.getUserInProgressPackages(userId);
-    const totalAmount = packages.reduce((sum, userPackage) => sum + Number(userPackage.investmentAmount ?? 0), 0);
-    return totalAmount * 10;
-  }
-
-  private async getUserInProgressPackages(userId: number): Promise<UserPackage[]> {
-    const inProgressPackages = await this.userPackageRepository.find({
-      where: { userId, status: UserPackageStatus.INPROGRESS },
-      relations: ['package'],
-    });
-    return inProgressPackages;
+    await this.botIncomeService.updateReferrerBotMaxIncome(referrer.id, referrerBot);
   }
 }
