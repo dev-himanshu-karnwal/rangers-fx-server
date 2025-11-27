@@ -5,7 +5,6 @@ import { Package } from './entities';
 import { PackageResponseDto } from './dto';
 import { ApiResponse } from 'src/common/response/api.response';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
-import { PaginatedResult } from 'src/common/pagination/pagination-query.dto';
 
 @Injectable()
 export class PackagesService {

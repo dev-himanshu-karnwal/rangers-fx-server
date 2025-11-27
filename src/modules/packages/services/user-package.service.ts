@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { UserPackage } from '../entities/user-package.entity';
 import { Package } from '../entities/package.entity';
 import { PurchasePackageDto } from '../dto/purchase-package.dto';
@@ -17,7 +17,6 @@ import { UserService } from 'src/modules/user/user.service';
 import { PackagesService } from '../packages.service';
 import { WalletResponseDto } from '../../wallets/dto';
 import { Wallet } from 'src/modules/wallets/entities';
-import { UserPackageStatus } from '../enums';
 import { UserPackagePostPurchaseService } from './user-package-post-purchase.service';
 import { QueryParamsDto, QueryParamsHelper } from 'src/common/query';
 

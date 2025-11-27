@@ -1,6 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Equal, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { ApiResponse } from 'src/common/response/api.response';
 import { WalletResponseDto } from './dto';
