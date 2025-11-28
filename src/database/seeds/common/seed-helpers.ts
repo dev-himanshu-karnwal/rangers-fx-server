@@ -9,6 +9,8 @@ import { PackageSeedData } from './packages/data';
 import { LevelSeedData } from './levels/data';
 import { WalletSeedData } from './wallets/data';
 import { UserSeedData } from './users/data';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Creates and initializes a DataSource connection for seeding
@@ -20,6 +22,9 @@ export async function createDataSource(): Promise<DataSource> {
     entities: [User, Wallet, Package, Level],
     synchronize: false,
     logging: false,
+    ssl: {
+      ca: fs.readFileSync(path.join(process.cwd(), 'certs/cert.crt'), 'utf-8').toString(),
+    },
   });
 
   await dataSource.initialize();
