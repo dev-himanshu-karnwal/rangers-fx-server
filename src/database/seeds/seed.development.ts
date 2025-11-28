@@ -5,15 +5,15 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../../src/modules/user/entities/user.entity';
-import { Wallet } from '../../src/modules/wallets/entities/wallet.entity';
-import { WalletType } from '../../src/modules/wallets/enums/wallet.enum';
-import { UserRole, WorkRole, UserStatus } from '../../src/modules/user/enums/user.enum';
-import { PackageType } from '../../src/modules/packages/enums';
-import { Package } from '../../src/modules/packages/entities/package.entity';
-import { Level } from '../../src/modules/levels/entities/level.entity';
-import { LevelConditionScope, LevelConditionType } from '../../src/modules/levels/enums';
-import { LevelCondition } from '../../src/modules/levels/interfaces';
+import { User } from '../../modules/user/entities/user.entity';
+import { Wallet } from '../../modules/wallets/entities/wallet.entity';
+import { WalletType } from '../../modules/wallets/enums/wallet.enum';
+import { UserRole, WorkRole, UserStatus } from '../../modules/user/enums/user.enum';
+import { PackageType } from '../../modules/packages/enums';
+import { Package } from '../../modules/packages/entities/package.entity';
+import { Level } from '../../modules/levels/entities/level.entity';
+import { LevelConditionScope, LevelConditionType } from '../../modules/levels/enums';
+import { LevelCondition } from '../../modules/levels/interfaces';
 
 // Load environment variables from .env.development file
 // Works from both TypeScript source and compiled JavaScript

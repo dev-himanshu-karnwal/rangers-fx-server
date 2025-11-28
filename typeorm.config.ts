@@ -33,8 +33,8 @@ export default new DataSource({
   type: 'postgres',
   url: databaseUrl,
   entities: ['src/**/*.entity{.ts,.js}'],
-  migrations: ['/database/migrations/**/*.ts'],
-  migrationsRun: false,
+  migrations: ['src/database/migrations/*.ts'],
+  migrationsRun: isProduction,
   synchronize: !isProduction,
   ssl: sslConfig,
 });

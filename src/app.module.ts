@@ -47,7 +47,7 @@ import fs from 'fs';
           url: databaseUrl,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.isDevelopment,
-          migrationsRun: false,
+          migrationsRun: configService.isProduction,
           migrations: [__dirname + '/database/migrations/**/*.ts'],
           logging: false,
           ssl: sslConfig,

@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitialSchema1764267409872 implements MigrationInterface {
-  name = 'InitialSchema1764267409872';
+export class InitialSchema1764305107188 implements MigrationInterface {
+  name = 'InitialSchema1764305107188';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -26,15 +26,6 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     await queryRunner.query(`CREATE INDEX "IDX_92558c08091598f7a4439586cd" ON "wallets" ("user_id") `);
     await queryRunner.query(`CREATE INDEX "idx_wallet_type" ON "wallets" ("wallet_type") `);
     await queryRunner.query(`CREATE INDEX "idx_wallet_user_id" ON "wallets" ("user_id") `);
-    await queryRunner.query(
-      `CREATE TYPE "public"."bot_activations_status_enum" AS ENUM('active', 'expired', 'consumed')`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "bot_activations" ("id" SERIAL NOT NULL, "user_id" integer NOT NULL, "wallet_id" integer NOT NULL, "status" "public"."bot_activations_status_enum" NOT NULL DEFAULT 'active', "income_received" numeric(18,2) NOT NULL DEFAULT '0', "max_income" numeric(18,2) NOT NULL DEFAULT '0', "notes" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d647d28208d1a33e0967b77f77a" PRIMARY KEY ("id"))`,
-    );
-    await queryRunner.query(`CREATE INDEX "idx_bot_activations_status" ON "bot_activations" ("status") `);
-    await queryRunner.query(`CREATE INDEX "idx_bot_activations_wallet_id" ON "bot_activations" ("wallet_id") `);
-    await queryRunner.query(`CREATE INDEX "idx_bot_activations_user_id" ON "bot_activations" ("user_id") `);
     await queryRunner.query(
       `CREATE TABLE "user_closure" ("ancestor_id" integer NOT NULL, "descendant_id" integer NOT NULL, "depth" integer NOT NULL DEFAULT '0', "root_child_id" integer, "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_62498a67b134e0d62e79d40e5be" PRIMARY KEY ("ancestor_id", "descendant_id"))`,
     );
@@ -68,6 +59,15 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "packages" ("id" SERIAL NOT NULL, "title" character varying(255) NOT NULL, "min_price" numeric(18,2) NOT NULL DEFAULT '100', "max_price" numeric(18,2) NOT NULL DEFAULT '20000', "months" integer NOT NULL, "type" "public"."packages_type_enum" NOT NULL, "features" text NOT NULL, "return_percentage" numeric(5,2), "return_capital" numeric(5,2) NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_020801f620e21f943ead9311c98" PRIMARY KEY ("id"))`,
     );
+    await queryRunner.query(
+      `CREATE TYPE "public"."bot_activations_status_enum" AS ENUM('active', 'expired', 'consumed')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "bot_activations" ("id" SERIAL NOT NULL, "user_id" integer NOT NULL, "wallet_id" integer NOT NULL, "status" "public"."bot_activations_status_enum" NOT NULL DEFAULT 'active', "income_received" numeric(18,2) NOT NULL DEFAULT '0', "max_income" numeric(18,2) NOT NULL DEFAULT '0', "notes" text, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d647d28208d1a33e0967b77f77a" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(`CREATE INDEX "idx_bot_activations_status" ON "bot_activations" ("status") `);
+    await queryRunner.query(`CREATE INDEX "idx_bot_activations_wallet_id" ON "bot_activations" ("wallet_id") `);
+    await queryRunner.query(`CREATE INDEX "idx_bot_activations_user_id" ON "bot_activations" ("user_id") `);
     await queryRunner.query(`CREATE TYPE "public"."user_packages_status_enum" AS ENUM('in-progress', 'completed')`);
     await queryRunner.query(
       `CREATE TABLE "user_packages" ("id" SERIAL NOT NULL, "user_id" integer NOT NULL, "package_id" integer NOT NULL, "bot_id" integer NOT NULL, "investment_amount" numeric(18,2) NOT NULL, "purchase_date" TIMESTAMP NOT NULL DEFAULT now(), "status" "public"."user_packages_status_enum" NOT NULL DEFAULT 'in-progress', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_77153c9b456a6fd5c5f48501ccb" PRIMARY KEY ("id"))`,
@@ -100,12 +100,6 @@ export class InitialSchema1764267409872 implements MigrationInterface {
       `ALTER TABLE "wallets" ADD CONSTRAINT "FK_92558c08091598f7a4439586cda" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
-      `ALTER TABLE "bot_activations" ADD CONSTRAINT "FK_7f9afda8b02588e602aa5291268" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "bot_activations" ADD CONSTRAINT "FK_22e28baea8947b40eceb6eccc2c" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
-    );
-    await queryRunner.query(
       `ALTER TABLE "transactions" ADD CONSTRAINT "FK_c337cc8fd8b43b3e8414f6464ec" FOREIGN KEY ("from_wallet_id") REFERENCES "wallets"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -116,6 +110,12 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "transactions" ADD CONSTRAINT "FK_033934753c087ec1ad01a66ec37" FOREIGN KEY ("status_updated_by") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "bot_activations" ADD CONSTRAINT "FK_7f9afda8b02588e602aa5291268" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "bot_activations" ADD CONSTRAINT "FK_22e28baea8947b40eceb6eccc2c" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
       `ALTER TABLE "user_packages" ADD CONSTRAINT "FK_9fbbdc1c0c48a5434b2582df8a6" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
@@ -140,12 +140,12 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "user_packages" DROP CONSTRAINT "FK_1f2efca9532220f943b9bf3ed79"`);
     await queryRunner.query(`ALTER TABLE "user_packages" DROP CONSTRAINT "FK_22ad76c5549e4c1c31da306c993"`);
     await queryRunner.query(`ALTER TABLE "user_packages" DROP CONSTRAINT "FK_9fbbdc1c0c48a5434b2582df8a6"`);
+    await queryRunner.query(`ALTER TABLE "bot_activations" DROP CONSTRAINT "FK_22e28baea8947b40eceb6eccc2c"`);
+    await queryRunner.query(`ALTER TABLE "bot_activations" DROP CONSTRAINT "FK_7f9afda8b02588e602aa5291268"`);
     await queryRunner.query(`ALTER TABLE "transactions" DROP CONSTRAINT "FK_033934753c087ec1ad01a66ec37"`);
     await queryRunner.query(`ALTER TABLE "transactions" DROP CONSTRAINT "FK_fccb615e34cc3d13821354bf066"`);
     await queryRunner.query(`ALTER TABLE "transactions" DROP CONSTRAINT "FK_0ead82990d0099eecec1fa10a29"`);
     await queryRunner.query(`ALTER TABLE "transactions" DROP CONSTRAINT "FK_c337cc8fd8b43b3e8414f6464ec"`);
-    await queryRunner.query(`ALTER TABLE "bot_activations" DROP CONSTRAINT "FK_22e28baea8947b40eceb6eccc2c"`);
-    await queryRunner.query(`ALTER TABLE "bot_activations" DROP CONSTRAINT "FK_7f9afda8b02588e602aa5291268"`);
     await queryRunner.query(`ALTER TABLE "wallets" DROP CONSTRAINT "FK_92558c08091598f7a4439586cda"`);
     await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_c4de8784831eab14aace7c26e65"`);
     await queryRunner.query(`DROP INDEX "public"."idx_user_levels_user_level"`);
@@ -163,6 +163,11 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "public"."idx_user_packages_bot_id"`);
     await queryRunner.query(`DROP TABLE "user_packages"`);
     await queryRunner.query(`DROP TYPE "public"."user_packages_status_enum"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_user_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_wallet_id"`);
+    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_status"`);
+    await queryRunner.query(`DROP TABLE "bot_activations"`);
+    await queryRunner.query(`DROP TYPE "public"."bot_activations_status_enum"`);
     await queryRunner.query(`DROP TABLE "packages"`);
     await queryRunner.query(`DROP TYPE "public"."packages_type_enum"`);
     await queryRunner.query(`DROP INDEX "public"."idx_transaction_id_status"`);
@@ -180,11 +185,6 @@ export class InitialSchema1764267409872 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX "public"."idx_uc_ancestor_depth_descendant"`);
     await queryRunner.query(`DROP INDEX "public"."idx_uc_descendant"`);
     await queryRunner.query(`DROP TABLE "user_closure"`);
-    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_user_id"`);
-    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_wallet_id"`);
-    await queryRunner.query(`DROP INDEX "public"."idx_bot_activations_status"`);
-    await queryRunner.query(`DROP TABLE "bot_activations"`);
-    await queryRunner.query(`DROP TYPE "public"."bot_activations_status_enum"`);
     await queryRunner.query(`DROP INDEX "public"."idx_wallet_user_id"`);
     await queryRunner.query(`DROP INDEX "public"."idx_wallet_type"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_92558c08091598f7a4439586cd"`);
