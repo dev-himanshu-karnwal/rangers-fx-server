@@ -15,6 +15,7 @@ import { TransactionService } from '../transactions/transaction.service';
 import { UserService } from '../user/user.service';
 import { WalletResponseDto } from '../wallets/dto';
 import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
+import { LevelConditionEvaluatorService } from '../levels/services/level-condition-evaluator.service';
 
 @Injectable()
 export class BotsService {
@@ -24,6 +25,7 @@ export class BotsService {
     private readonly walletService: WalletService,
     private readonly transactionService: TransactionService,
     private readonly userService: UserService,
+    private readonly levelConditionEvaluatorService: LevelConditionEvaluatorService,
   ) {}
 
   /**
@@ -46,7 +48,7 @@ export class BotsService {
     const userWallet = await this.getUserWalletOrThrow(user.id);
 
     // Get the referrer and their wallet, if any
-    const { referrer, referrerWallet, referrerBot } = await this.getReferrerContext(user);
+    const { referrer, referrerWallet } = await this.getReferrerContext(user);
 
     // Check that the user has enough balance considering pending transactions
     await this.transactionService.ensureSufficientBalanceWithPendingTransactions(
@@ -65,7 +67,6 @@ export class BotsService {
       userWallet,
       companyIncomeWallet,
       referrerWallet,
-      referrerBot,
       ...allocations,
     });
 
@@ -267,12 +268,14 @@ export class BotsService {
     }
 
     const bot = await this.getActiveBotActivation(userId);
-    if (!bot) {
-      return;
-    }
+    if (!bot) return;
 
     bot.incomeReceived = (bot.incomeReceived || 0) + amount;
     await this.saveBot(bot);
+
+    // Check and promote user and all ancestors based on level conditions
+    // This processes sequentially up the chain and recursively checks ancestors of promoted users
+    await this.levelConditionEvaluatorService.checkAndPromoteAncestors(userId);
   }
 
   /**
@@ -349,12 +352,7 @@ export class BotsService {
       throw new NotFoundException('Referrer wallet not found');
     }
 
-    const referrerBot = await this.getActiveBotActivation(referrer.id);
-    if (!referrerBot) {
-      throw new NotFoundException('Referrer bot not found');
-    }
-
-    return { referrer, referrerWallet, referrerBot };
+    return { referrer, referrerWallet };
   }
 
   /**
@@ -388,14 +386,12 @@ export class BotsService {
     userWallet,
     companyIncomeWallet,
     referrerWallet,
-    referrerBot,
     companyAllocationAmount,
     referralAllocationAmount,
   }: {
     userWallet: WalletResponseDto;
     companyIncomeWallet: WalletResponseDto;
-    referrerWallet: WalletResponseDto | null;
-    referrerBot: BotActivation;
+    referrerWallet: WalletResponseDto;
     companyAllocationAmount: number;
     referralAllocationAmount: number;
   }) {
@@ -406,8 +402,7 @@ export class BotsService {
       referrerWallet.balance += referralAllocationAmount;
       await this.walletService.saveWallet(referrerWallet);
 
-      referrerBot.incomeReceived += referralAllocationAmount;
-      await this.saveBot(referrerBot);
+      await this.increaseActiveBotIncomeReceived(referrerWallet.userId!, referralAllocationAmount);
     }
 
     await this.walletService.saveWallet(userWallet);
