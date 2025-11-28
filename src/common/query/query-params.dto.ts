@@ -49,6 +49,10 @@ export class QueryParamsDto {
   @IsDateString()
   endDate?: string;
 
+  @IsOptional()
+  @IsString()
+  direction?: string;
+
   // Index signature to allow any additional filter fields
   [key: string]: any;
 }
