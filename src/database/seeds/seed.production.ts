@@ -3,22 +3,14 @@ import 'tsconfig-paths/register';
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import {
-  createDataSource,
-  seedPackages,
-  seedLevels,
-  seedCompanyWallets,
-  seedUsers,
-  seedPersonalWallet,
-} from './common/seed-helpers';
-import { getPackagesData } from './common/packages/dev';
-import { getLevelsData } from './common/levels/dev';
-import { getCompanyWalletsData } from './common/wallets/dev';
-import { getUsersData } from './common/users/dev';
+import { createDataSource, seedPackages, seedLevels, seedCompanyWallets } from './common/seed-helpers';
+import { getPackagesData } from './common/packages/prod';
+import { getLevelsData } from './common/levels/prod';
+import { getCompanyWalletsData } from './common/wallets/prod';
 
-// Load environment variables from .env.development file
+// Load environment variables from .env.production file
 // Works from both TypeScript source and compiled JavaScript
-const envPath = resolve(process.cwd(), '.env.development');
+const envPath = resolve(process.cwd(), '.env.production');
 config({ path: envPath });
 console.log(`Loading environment from: ${envPath}`);
 
@@ -26,28 +18,21 @@ async function seed() {
   const dataSource = await createDataSource();
 
   try {
-    // Get data from dev files
+    // Get data from prod files
     const packagesData = getPackagesData();
     const levelsData = getLevelsData();
     const companyWalletsData = getCompanyWalletsData();
-    const usersData = getUsersData();
 
-    // Seed users
-    const userIds = await seedUsers(dataSource, usersData);
-
-    // Seed personal wallets for each user
-    for (const userId of userIds) {
-      await seedPersonalWallet(dataSource, userId);
-    }
-
-    // Seed company wallets
+    // Seed company wallets (required for system operation)
     await seedCompanyWallets(dataSource, companyWalletsData);
 
-    // Seed packages
+    // Seed packages (required for system operation)
     await seedPackages(dataSource, packagesData);
 
-    // Seed levels
+    // Seed levels (required for system operation)
     await seedLevels(dataSource, levelsData);
+
+    console.log('Production seed completed successfully');
   } catch (error) {
     console.error('Error seeding database:', error);
     throw error;
