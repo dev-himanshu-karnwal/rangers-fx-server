@@ -53,6 +53,10 @@ export class QueryParamsDto {
   @IsString()
   direction?: string;
 
+  @IsOptional()
+  @IsString()
+  type?: string;
+
   // Index signature to allow any additional filter fields
   [key: string]: any;
 }
