@@ -20,6 +20,6 @@ import { ClosureModule } from '../user/closure/closure.module';
     ClosureModule,
   ],
   providers: [IncomeService, BotIncomeService, PassiveIncomeService, TradingIncomeService, AppraisalIncomeService],
-  exports: [IncomeService, BotIncomeService, PassiveIncomeService],
+  exports: [IncomeService, BotIncomeService, PassiveIncomeService, AppraisalIncomeService],
 })
 export class IncomeModule {}

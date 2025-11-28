@@ -8,6 +8,7 @@ import { BusinessConditionEvaluator } from './evaluators/business-condition.eval
 import { LevelsConditionEvaluator } from './evaluators/levels-condition.evaluator';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/user.service';
+import { AppraisalIncomeService } from '../../income/services/appraisal-income.service';
 
 /**
  * Level Promotion Service
@@ -23,6 +24,7 @@ export class LevelPromotionService {
     private readonly businessEvaluator: BusinessConditionEvaluator,
     private readonly levelsEvaluator: LevelsConditionEvaluator,
     private readonly userService: UserService,
+    private readonly appraisalIncomeService: AppraisalIncomeService,
   ) {
     // Register all condition evaluators
     this.evaluators = [this.businessEvaluator, this.levelsEvaluator];
@@ -56,6 +58,10 @@ export class LevelPromotionService {
 
     // Promote user to eligible level
     await this.levelsService.assignLevelByHierarchy(user, eligibleLevel.hierarchy);
+
+    // Distribute appraisal bonus for all levels between current and new level
+    await this.appraisalIncomeService.distributeAppraisalBonus(user, currentHierarchy, eligibleLevel.hierarchy);
+
     return true; // User was promoted
   }
 

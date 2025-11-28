@@ -10,10 +10,16 @@ import { BusinessConditionEvaluator } from './services/evaluators/business-condi
 import { LevelsConditionEvaluator } from './services/evaluators/levels-condition.evaluator';
 import { UserModule } from '../user/user.module';
 import { ClosureModule } from '../user/closure/closure.module';
+import { IncomeModule } from '../income/income.module';
 import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Level, UserLevel, User]), forwardRef(() => UserModule), ClosureModule],
+  imports: [
+    TypeOrmModule.forFeature([Level, UserLevel, User]),
+    forwardRef(() => UserModule),
+    forwardRef(() => IncomeModule),
+    ClosureModule,
+  ],
   controllers: [LevelsController],
   providers: [
     LevelsService,
