@@ -46,7 +46,7 @@ export class BotsService {
     const userWallet = await this.getUserWalletOrThrow(user.id);
 
     // Get the referrer and their wallet, if any
-    const { referrer, referrerWallet } = await this.getReferrerContext(user);
+    const { referrer, referrerWallet, referrerBot } = await this.getReferrerContext(user);
 
     // Check that the user has enough balance considering pending transactions
     await this.transactionService.ensureSufficientBalanceWithPendingTransactions(
@@ -65,6 +65,7 @@ export class BotsService {
       userWallet,
       companyIncomeWallet,
       referrerWallet,
+      referrerBot,
       ...allocations,
     });
 
@@ -332,7 +333,7 @@ export class BotsService {
    */
   private async getReferrerContext(user: User) {
     if (!user.referredByUserId) {
-      return { referrer: null, referrerWallet: null };
+      throw new NotFoundException('Referrer user not found');
     }
 
     const referrer = await this.userService.findByIdEntity(user.referredByUserId);
@@ -348,7 +349,12 @@ export class BotsService {
       throw new NotFoundException('Referrer wallet not found');
     }
 
-    return { referrer, referrerWallet };
+    const referrerBot = await this.getActiveBotActivation(referrer.id);
+    if (!referrerBot) {
+      throw new NotFoundException('Referrer bot not found');
+    }
+
+    return { referrer, referrerWallet, referrerBot };
   }
 
   /**
@@ -382,12 +388,14 @@ export class BotsService {
     userWallet,
     companyIncomeWallet,
     referrerWallet,
+    referrerBot,
     companyAllocationAmount,
     referralAllocationAmount,
   }: {
     userWallet: WalletResponseDto;
     companyIncomeWallet: WalletResponseDto;
     referrerWallet: WalletResponseDto | null;
+    referrerBot: BotActivation;
     companyAllocationAmount: number;
     referralAllocationAmount: number;
   }) {
@@ -397,6 +405,9 @@ export class BotsService {
     if (referralAllocationAmount > 0 && referrerWallet) {
       referrerWallet.balance += referralAllocationAmount;
       await this.walletService.saveWallet(referrerWallet);
+
+      referrerBot.incomeReceived += referralAllocationAmount;
+      await this.saveBot(referrerBot);
     }
 
     await this.walletService.saveWallet(userWallet);

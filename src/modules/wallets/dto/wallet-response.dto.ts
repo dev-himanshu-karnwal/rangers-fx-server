@@ -1,6 +1,7 @@
 import { Exclude, Expose, plainToInstance } from 'class-transformer';
 import { WalletType } from '../enums/wallet.enum';
 import { Wallet } from '../entities/wallet.entity';
+import { User } from '../../user/entities/user.entity';
 
 /**
  * DTO for wallet response
@@ -28,6 +29,9 @@ export class WalletResponseDto {
   @Expose()
   updatedAt: Date;
 
+  @Expose()
+  user?: WalletUserSummaryDto | null;
+
   constructor(partial: Partial<WalletResponseDto>) {
     Object.assign(this, partial);
   }
@@ -38,6 +42,21 @@ export class WalletResponseDto {
    * @returns WalletResponseDto with only exposed fields
    */
   static fromEntity(wallet: Wallet): WalletResponseDto {
-    return plainToInstance(WalletResponseDto, wallet, { excludeExtraneousValues: true });
+    const dto = plainToInstance(WalletResponseDto, wallet, { excludeExtraneousValues: true });
+    if (wallet.user) {
+      dto.user = plainToInstance(WalletUserSummaryDto, wallet.user, { excludeExtraneousValues: true });
+    } else {
+      dto.user = null;
+    }
+    return dto;
   }
+}
+
+@Exclude()
+export class WalletUserSummaryDto extends User {
+  @Expose()
+  declare id: number;
+
+  @Expose()
+  declare fullName: string;
 }

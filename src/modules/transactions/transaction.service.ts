@@ -61,7 +61,11 @@ export class TransactionService {
 
     const queryBuilder = this.transactionRepository
       .createQueryBuilder('transaction')
-      .where('(transaction.fromWalletId = :walletId OR transaction.toWalletId = :walletId)', { walletId });
+      .where('(transaction.fromWalletId = :walletId OR transaction.toWalletId = :walletId)', { walletId })
+      .leftJoin('transaction.fromWallet', 'fromWallet')
+      .leftJoin('transaction.toWallet', 'toWallet')
+      .leftJoin('fromWallet.user', 'fromWalletUser')
+      .leftJoin('toWallet.user', 'toWalletUser');
 
     const metadata = this.transactionRepository.metadata;
     const { filters } = parsed;
@@ -74,6 +78,16 @@ export class TransactionService {
       'transaction.status',
       'transaction.createdAt',
       'transaction.description',
+    ]);
+    queryBuilder.addSelect([
+      'fromWallet.id',
+      'fromWallet.userId',
+      'toWallet.id',
+      'toWallet.userId',
+      'fromWalletUser.id',
+      'fromWalletUser.fullName',
+      'toWalletUser.id',
+      'toWalletUser.fullName',
     ]);
 
     if (filters.status) {

@@ -37,7 +37,7 @@ export class WalletService {
    */
   async getUserWallet(userId: number): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
     const wallet = await this.getUserWalletEntity(userId);
-    return ApiResponse.success('Wallet fetched Successfully.', { wallet: new WalletResponseDto(wallet) });
+    return ApiResponse.success('Wallet fetched Successfully.', { wallet: WalletResponseDto.fromEntity(wallet) });
   }
 
   /**
@@ -79,7 +79,7 @@ export class WalletService {
       throw new NotFoundException(`${walletType} wallet not found.`);
     }
     return ApiResponse.success(`${walletType} fetched successfully.`, {
-      wallet: new WalletResponseDto(walletResponse),
+      wallet: WalletResponseDto.fromEntity(walletResponse),
     });
   }
 
@@ -146,7 +146,7 @@ export class WalletService {
    * @param wallet - The wallet to save
    * @returns Promise that resolves to the updated Wallet entity
    */
-  async saveWallet(wallet: Wallet): Promise<Wallet> {
+  async saveWallet(wallet: Wallet | WalletResponseDto): Promise<Wallet> {
     return await this.walletRepository.save(wallet);
   }
 
