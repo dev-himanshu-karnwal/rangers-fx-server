@@ -25,10 +25,7 @@ import fs from 'fs';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.databaseUrl;
-        // Check if this is a DigitalOcean managed database (doadmin user) or remote database
-        const isRemoteDatabase =
-          databaseUrl.includes('@') && !databaseUrl.includes('localhost') && !databaseUrl.includes('127.0.0.1');
-        const requiresSSL = configService.isProduction || databaseUrl.includes('doadmin') || isRemoteDatabase;
+        const requiresSSL = configService.isProduction || databaseUrl.includes('doadmin');
         let sslConfig: any = false;
         if (requiresSSL) {
           const certPath = path.join(process.cwd(), 'certs/cert.crt');
@@ -37,11 +34,11 @@ import fs from 'fs';
               ca: fs.readFileSync(certPath, 'utf-8').toString(),
             };
           } else {
-            // If cert file doesn't exist, use rejectUnauthorized: false for development
-            // In production, you should always have the cert file
-            sslConfig = {
-              rejectUnauthorized: configService.isProduction,
-            };
+            sslConfig = configService.isProduction
+              ? {
+                  rejectUnauthorized: false,
+                }
+              : false;
           }
         }
 
@@ -50,7 +47,7 @@ import fs from 'fs';
           url: databaseUrl,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.isDevelopment,
-          migrationsRun: configService.isProduction,
+          migrationsRun: false,
           migrations: [__dirname + '/database/migrations/**/*.ts'],
           logging: false,
           ssl: sslConfig,

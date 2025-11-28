@@ -5,10 +5,17 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter';
 import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
 import { AppValidationPipe } from './common/pipes/app-validation.pipe';
 import cookieParser from 'cookie-parser';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  if (configService.isProduction) {
+    const dataSource = app.get(DataSource);
+    await dataSource.runMigrations();
+    console.log('Migrations ran successfully');
+  }
 
   // Enable cookie parser middleware
   app.use(cookieParser());

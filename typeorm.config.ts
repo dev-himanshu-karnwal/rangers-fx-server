@@ -9,9 +9,10 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is not set');
 }
-const isRemoteDatabase =
-  databaseUrl.includes('@') && !databaseUrl.includes('localhost') && !databaseUrl.includes('127.0.0.1');
-const requiresSSL = process.env.NODE_ENV === 'production' || databaseUrl.includes('doadmin') || isRemoteDatabase;
+
+const isProduction = process.env.NODE_ENV === 'production';
+const requiresSSL = isProduction || databaseUrl.includes('doadmin');
+
 let sslConfig: any = false;
 if (requiresSSL) {
   const certPath = path.join(process.cwd(), 'certs/cert.crt');
@@ -20,11 +21,11 @@ if (requiresSSL) {
       ca: fs.readFileSync(certPath, 'utf-8').toString(),
     };
   } else {
-    // If cert file doesn't exist, use rejectUnauthorized: false for development
-    // In production, you should always have the cert file
-    sslConfig = {
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
-    };
+    sslConfig = isProduction
+      ? {
+          rejectUnauthorized: false,
+        }
+      : false;
   }
 }
 
@@ -33,12 +34,7 @@ export default new DataSource({
   url: databaseUrl,
   entities: ['src/**/*.entity{.ts,.js}'],
   migrations: ['/database/migrations/**/*.ts'],
-  migrationsRun: process.env.NODE_ENV === 'production',
-  synchronize: process.env.NODE_ENV === 'development',
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? {
-          ca: fs.readFileSync(path.join(process.cwd(), 'certs/cert.crt'), 'utf-8').toString(),
-        }
-      : false,
+  migrationsRun: false,
+  synchronize: !isProduction,
+  ssl: sslConfig,
 });
