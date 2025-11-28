@@ -12,10 +12,11 @@ import { UserModule } from '../user/user.module';
 import { ClosureModule } from '../user/closure/closure.module';
 import { IncomeModule } from '../income/income.module';
 import { User } from '../user/entities/user.entity';
+import { UserClosure } from '../user/closure/entities/closure.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Level, UserLevel, User]),
+    TypeOrmModule.forFeature([Level, UserLevel, User, UserClosure]),
     forwardRef(() => UserModule),
     forwardRef(() => IncomeModule),
     ClosureModule,
