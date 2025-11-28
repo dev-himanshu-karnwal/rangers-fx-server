@@ -62,6 +62,15 @@ export class UserService {
   }
 
   /**
+   * Find user by wallet ID
+   * @param walletId - Wallet ID
+   * @returns User response DTO wrapped in ApiResponse
+   */
+  async getUserByWalletId(walletId: number): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userQueryService.getUserByWalletId(walletId);
+  }
+
+  /**
    * Find user by email (internal use)
    * @param email - User email
    * @param options - Optional find options

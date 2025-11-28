@@ -66,6 +66,27 @@ export class UserQueryService {
   }
 
   /**
+   * Find user by wallet ID
+   * @param walletId - Wallet ID
+   * @returns User response DTO wrapped in ApiResponse
+   */
+  async getUserByWalletId(walletId: number): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin('wallets', 'wallet', 'wallet.user_id = user.id')
+      .where('wallet.id = :walletId', { walletId })
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException(`User with wallet ID ${walletId} not found`);
+    }
+
+    return ApiResponse.success('User fetched successfully', {
+      user: await this.mapToUserResponse(user),
+    });
+  }
+
+  /**
    * Find user by email (internal use)
    * @param email - User email
    * @param options - Optional find options

@@ -40,6 +40,19 @@ export class UserController {
   }
 
   /**
+   * Get user by wallet ID
+   * @param walletId - Wallet ID
+   * @returns ApiResponse containing the matched user DTO
+   */
+  @Get('wallets/:walletId')
+  @HttpCode(HttpStatus.OK)
+  async getUserByWalletId(
+    @Param('walletId', ParseIntPipe) walletId: number,
+  ): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userService.getUserByWalletId(walletId);
+  }
+
+  /**
    * Get user by ID
    * @param id - User ID
    * @returns User response DTO
