@@ -195,8 +195,7 @@ export class TransactionService {
     withdrawCompanyTransactionDto: WithdrawCompanyTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const companyIncomeWalletResponse = await this.walletService.getCompanyIncomeWallet();
-    const companyIncomeWallet = companyIncomeWalletResponse.data!.wallet;
+    const companyIncomeWallet = await this.walletService.getCompanyIncomeWalletEntity();
 
     if (companyIncomeWallet.balance < withdrawCompanyTransactionDto.amount) {
       throw new BadRequestException('Insufficient balance in company income wallet');
@@ -230,8 +229,7 @@ export class TransactionService {
     withdrawPersonalTransactionDto: WithdrawPersonalTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const userWalletResponse = await this.walletService.getUserWallet(user.id);
-    const userWallet = userWalletResponse.data!.wallet;
+    const userWallet = await this.walletService.getUserWalletEntity(user.id);
 
     if (userWallet.balance < withdrawPersonalTransactionDto.amount) {
       throw new BadRequestException('Insufficient balance in your wallet');
@@ -265,11 +263,8 @@ export class TransactionService {
     addPersonalTransactionDto: AddPersonalTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const userWalletResponse = await this.walletService.getUserWallet(user.id);
-    const userWallet = userWalletResponse.data!.wallet;
-
-    const companyInvestmentWalletResponse = await this.walletService.getCompanyInvestmentWallet();
-    const companyInvestmentWallet = companyInvestmentWalletResponse.data!.wallet;
+    const userWallet = await this.walletService.getUserWalletEntity(user.id);
+    const companyInvestmentWallet = await this.walletService.getCompanyInvestmentWalletEntity();
 
     const newTransaction = await this.createTransaction({
       amount: addPersonalTransactionDto.amount,

@@ -126,8 +126,7 @@ export class WalletService {
    * @returns Promise that resolves to the updated Wallet entity
    */
   async increaseCompanyInvestmentWalletBalance(amount: number): Promise<Wallet> {
-    const walletResponse = await this.getCompanyInvestmentWallet();
-    const wallet = walletResponse.data!.wallet;
+    const wallet = await this.getCompanyInvestmentWalletEntity();
     wallet.balance += amount;
     return await this.walletRepository.save(wallet);
   }
@@ -138,8 +137,7 @@ export class WalletService {
    * @returns Promise that resolves to the updated Wallet entity
    */
   async decreaseCompanyInvestmentWalletBalance(amount: number): Promise<Wallet> {
-    const walletResponse = await this.getCompanyInvestmentWallet();
-    const wallet = walletResponse.data!.wallet;
+    const wallet = await this.getCompanyInvestmentWalletEntity();
 
     if (wallet.balance < amount) {
       throw new BadRequestException('Insufficient balance in company investment wallet');
@@ -156,8 +154,7 @@ export class WalletService {
    * @returns Promise that resolves to the updated Wallet entity
    */
   async increasePersonalWalletBalance(amount: number, user: User): Promise<Wallet> {
-    const walletResponse = await this.getUserWallet(user.id);
-    const wallet = walletResponse.data!.wallet;
+    const wallet = await this.getUserWalletEntity(user.id);
     wallet.balance += amount;
     return await this.walletRepository.save(wallet);
   }
@@ -167,7 +164,7 @@ export class WalletService {
    * @param wallet - The wallet to save
    * @returns Promise that resolves to the updated Wallet entity
    */
-  async saveWallet(wallet: Wallet | WalletResponseDto): Promise<Wallet> {
+  async saveWallet(wallet: Wallet): Promise<Wallet> {
     return await this.walletRepository.save(wallet);
   }
 
