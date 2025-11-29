@@ -24,6 +24,6 @@ import { IncomeModule } from '../income/income.module';
   ],
   controllers: [PackagesController],
   providers: [PackagesService, UserPackageService, UserPackagePostPurchaseService],
-  exports: [PackagesService, UserPackageService], // Export for use in other modules if needed
+  exports: [PackagesService, UserPackageService, UserPackagePostPurchaseService], // Export for use in other modules if needed
 })
 export class PackagesModule {}

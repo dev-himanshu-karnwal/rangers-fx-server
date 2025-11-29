@@ -21,12 +21,11 @@ export class UserPackagePostPurchaseService {
    * Handles all domain side-effects that must happen once a package purchase succeeds.
    */
   async handlePostPurchaseSuccess(user: User, bot: BotActivation): Promise<void> {
-    const userWithRole = await this.ensureInvestorRoleAndLevel(user);
-    await this.updateCurrentUserBotMaxIncome(userWithRole, bot);
-    await this.updateReferrerContext(userWithRole);
+    await this.updateCurrentUserBotMaxIncome(user, bot);
+    await this.updateReferrerContext(user);
   }
 
-  private async ensureInvestorRoleAndLevel(user: User): Promise<User> {
+  async ensureInvestorRoleAndLevel(user: User): Promise<User> {
     const shouldAssignLevel = user.workRole === WorkRole.NONE;
     const updatedUser = (await this.userService.updateUserRoleToInvestorIfNeeded(user)) ?? user;
 
@@ -41,7 +40,7 @@ export class UserPackagePostPurchaseService {
     await this.botIncomeService.updateBotMaxIncome(user, bot);
   }
 
-  private async updateReferrerContext(user: User): Promise<void> {
+  async updateReferrerContext(user: User): Promise<void> {
     if (!user.referredByUserId) {
       return;
     }
@@ -51,9 +50,9 @@ export class UserPackagePostPurchaseService {
       return;
     }
 
+    // Use safe update method to avoid overwriting referrer's referredByUserId
     if (referrer.workRole !== WorkRole.WORKER) {
-      referrer.workRole = WorkRole.WORKER;
-      await this.userService.saveUser(referrer);
+      await this.userService.updateWorkRole(referrer.id, WorkRole.WORKER);
     }
 
     const referrerBot = await this.botsService.getActiveBotActivation(referrer.id);

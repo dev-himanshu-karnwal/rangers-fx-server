@@ -13,6 +13,7 @@ import { ConfigModule } from '../../config/config.module';
 import { ConfigService } from '../../config/config.service';
 import { EmailModule } from '../../core/services/email/email.module';
 import { AUTH_CONSTANTS } from './constants/auth.constants';
+import { PackagesModule } from '../packages/packages.module';
 
 /**
  * Auth module - handles authentication and authorization
@@ -27,6 +28,7 @@ import { AUTH_CONSTANTS } from './constants/auth.constants';
     ConfigModule, // Import ConfigModule to access ConfigService
     EmailModule, // Import EmailModule to access EmailService
     PassportModule.register({ defaultStrategy: AUTH_CONSTANTS.DEFAULT_STRATEGY }),
+    PackagesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {

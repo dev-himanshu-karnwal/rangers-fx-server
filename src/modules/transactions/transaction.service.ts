@@ -359,7 +359,7 @@ export class TransactionService {
       amount: adminTransferToPersonalDto.amount,
       description:
         adminTransferToPersonalDto.description ??
-        `Admin transfer of ${adminTransferToPersonalDto.amount} to user ${adminTransferToPersonalDto.userId}'s personal wallet`,
+        `Admin transfer of ${adminTransferToPersonalDto.amount} to user #${adminTransferToPersonalDto.userId} personal wallet`,
       type: TransactionType.ADD_PERSONAL,
       toWallet: userWallet,
       fromWallet: companyInvestmentWallet,

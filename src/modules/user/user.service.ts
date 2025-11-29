@@ -138,15 +138,6 @@ export class UserService {
     return this.userQueryService.findDirectChildrenOfUserById(id, query);
   }
 
-  /**
-   * Get current user profile
-   * @param user - User entity
-   * @returns User profile response
-   */
-  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
-    return this.userQueryService.getMe(user);
-  }
-
   // ==================== Password Operations ====================
 
   /**
@@ -256,6 +247,25 @@ export class UserService {
   }
 
   /**
+   * Increments the direct children count for a user by ID
+   * Uses query builder to safely update only this field without affecting relations
+   * @param userId - User ID to increment children count for
+   */
+  async incrementDirectChildrenCount(userId: number): Promise<void> {
+    return this.userUpdateService.incrementDirectChildrenCount(userId);
+  }
+
+  /**
+   * Updates the work role for a user by ID
+   * Uses query builder to safely update only this field without affecting relations
+   * @param userId - User ID to update work role for
+   * @param workRole - New work role value
+   */
+  async updateWorkRole(userId: number, workRole: WorkRole): Promise<void> {
+    return this.userUpdateService.updateWorkRole(userId, workRole);
+  }
+
+  /**
    * Update personal details for the authenticated user.
    * @param updateUserDto - Partial user fields for personal details update
    * @param currentUser - Current authenticated user entity
@@ -281,14 +291,13 @@ export class UserService {
   /**
    * Updates user role to investor if currently none and activates user
    * @param user - User entity
-   * @returns Updated user entity if updated, null otherwise
+   * @returns Updated user entity
    */
-  async updateUserRoleToInvestorIfNeeded(user: User): Promise<User | null> {
+  async updateUserRoleToInvestorIfNeeded(user: User): Promise<User> {
     if (user.workRole === WorkRole.NONE) {
       user.workRole = WorkRole.INVESTOR;
     }
-    user.status = UserStatus.ACTIVE;
-    return await this.saveUser(user);
+    return this.saveUser(user);
   }
 
   /**

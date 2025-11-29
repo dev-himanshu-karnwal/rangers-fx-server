@@ -180,6 +180,9 @@ export class UserPackageService {
     // Update domain entities that depend on the purchase success
     await this.userPackagePostPurchaseService.handlePostPurchaseSuccess(user, bot);
 
+    // Increment business done amount
+    await this.userService.incrementBusinessDone(user, purchasePackageDto.investmentAmount);
+
     // Handle package purchase transaction (93% to company, 7% to upline)
     await this.passiveIncomeService.handlePackagePurchaseTransaction(
       user,
@@ -190,11 +193,11 @@ export class UserPackageService {
       purchasePackageDto.investmentAmount,
     );
 
-    // Increment business done amount
-    await this.userService.incrementBusinessDone(user, purchasePackageDto.investmentAmount);
+    await this.userPackagePostPurchaseService.ensureInvestorRoleAndLevel(user);
 
     // Return response with relations
     const userPackageWithRelations = await this.getUserPackageWithRelations(userPackage.id);
+
     return ApiResponse.success('Package purchased successfully', {
       userPackage: UserPackageResponseDto.fromEntity(userPackageWithRelations),
     });

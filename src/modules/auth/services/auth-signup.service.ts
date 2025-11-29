@@ -8,8 +8,9 @@ import { OtpPurpose } from '../../otp/enums/otp.enum';
 import { ApiResponse } from '../../../common/response/api.response';
 import type { Response } from 'express';
 import { UserStatus } from '../../user/enums/user.enum';
-import { UserResponseDto } from '../../user/dto';
 import { AuthTokenService } from './auth-token.service';
+import { UserPackagePostPurchaseService } from '../../packages/services/user-package-post-purchase.service';
+import { UserResponseDto } from 'src/modules/user/dto';
 
 /**
  * Auth Signup Service - handles signup-related operations
@@ -25,6 +26,7 @@ export class AuthSignupService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly authTokenService: AuthTokenService,
+    private readonly userPackagePostPurchaseService: UserPackagePostPurchaseService,
   ) {}
 
   /**
@@ -111,16 +113,17 @@ export class AuthSignupService {
     this.authTokenService.storeValueInCookie(res, this.configService.authTokenCookieKey, accessToken);
 
     // Get user DTO for response
-    const userResponse = await this.userService.findOne(updatedUser.id);
+    const user = await this.userService.findByIdEntity(updatedUser.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
 
     // Updating parent - increment children count when a user joins via referral
-    if (userResponse.referredByUserId) {
-      const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId);
-      if (existingParent) {
-        existingParent.directChildrenCount = (existingParent.directChildrenCount ?? 0) + 1;
-        await this.userService.saveUser(existingParent);
-      }
+    // Use safe increment method to avoid overwriting parent's referredByUserId
+    if (user.referredByUserId) {
+      await this.userService.incrementDirectChildrenCount(user.referredByUserId);
+      await this.userPackagePostPurchaseService.updateReferrerContext(user);
     }
 
     this.logger.log(`Signup completed for user: ${updatedUser.email}`);
@@ -129,7 +132,7 @@ export class AuthSignupService {
       'Registration completed successfully',
       new AuthResponseDto({
         accessToken,
-        user: userResponse,
+        user: UserResponseDto.fromEntity(user),
       }),
     );
   }

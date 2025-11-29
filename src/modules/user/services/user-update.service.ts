@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UpdateUserDto, UserResponseDto } from '../dto';
-import { UserStatus } from '../enums/user.enum';
+import { UserStatus, WorkRole } from '../enums/user.enum';
 
 /**
  * User Update Service - handles user update operations
@@ -17,7 +17,6 @@ export class UserUpdateService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-
   /**
    * Update user information
    * @param id - User ID
@@ -90,5 +89,42 @@ export class UserUpdateService {
   async incrementBusinessDone(user: User, amount: number): Promise<User> {
     user.businessDone = (user.businessDone ?? 0) + amount;
     return await this.saveUser(user);
+  }
+
+  /**
+   * Increments the direct children count for a user by ID
+   * Uses query builder to safely update only this field without affecting relations
+   * @param userId - User ID to increment children count for
+   * @returns Promise that resolves when update is complete
+   */
+  async incrementDirectChildrenCount(userId: number): Promise<void> {
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        directChildrenCount: () => 'direct_children_count + 1',
+      })
+      .where('id = :userId', { userId })
+      .execute();
+
+    this.logger.log(`Direct children count incremented for user: ${userId}`);
+  }
+
+  /**
+   * Updates the work role for a user by ID
+   * Uses query builder to safely update only this field without affecting relations
+   * @param userId - User ID to update work role for
+   * @param workRole - New work role value
+   * @returns Promise that resolves when update is complete
+   */
+  async updateWorkRole(userId: number, workRole: WorkRole): Promise<void> {
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ workRole })
+      .where('id = :userId', { userId })
+      .execute();
+
+    this.logger.log(`Work role updated for user: ${userId} to ${workRole}`);
   }
 }

@@ -277,7 +277,7 @@ export class PassiveIncomeService {
     description: string;
     initiator: User;
     entityId: number;
-    recipientUserId?: number;
+    recipientUserId: number;
   }): Promise<void> {
     const { fromWallet, toWallet, amount, description, initiator, entityId, recipientUserId } = params;
 
@@ -303,9 +303,7 @@ export class PassiveIncomeService {
     });
 
     // Increase passive income counter for receiving user's active bot
-    if (recipientUserId) {
-      await this.botsService.increaseActiveBotIncomeReceived(recipientUserId, amount);
-    }
+    await this.botsService.increaseActiveBotIncomeReceived(recipientUserId, amount);
   }
 
   /**
