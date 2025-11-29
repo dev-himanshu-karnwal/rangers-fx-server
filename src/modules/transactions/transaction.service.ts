@@ -78,6 +78,7 @@ export class TransactionService {
       'transaction.status',
       'transaction.createdAt',
       'transaction.description',
+      'transaction.amount',
     ]);
     queryBuilder.addSelect([
       'fromWallet.id',
