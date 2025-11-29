@@ -5,3 +5,5 @@ export * from './add-p2p.dto';
 export * from './withdraw-company-transaction.dto';
 export * from './withdraw-personal-transaction.dto';
 export * from './admin-transfer-to-personal.dto';
+export * from './wallet-summary-query.dto';
+export * from './wallet-summary-query.helper';

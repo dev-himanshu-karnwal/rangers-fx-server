@@ -20,6 +20,7 @@ import {
   AddP2PTransactionDto,
   WithdrawCompanyTransactionDto,
   WithdrawPersonalTransactionDto,
+  WalletSummaryQueryDto,
 } from './dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../user/entities';
@@ -67,6 +68,38 @@ export class TransactionController {
     }>
   > {
     return this.transactionService.getAllTransactions(user, query);
+  }
+
+  /**
+   * Gets wallet summary statistics for the current user.
+   * All calculations are done in a single database query.
+   * @param user - The current authenticated user
+   * @param query - Query parameters for filtering (no pagination or sorting)
+   * @returns ApiResponse containing wallet summary statistics
+   */
+  @Get('summary')
+  @HttpCode(HttpStatus.OK)
+  async getWalletSummary(
+    @CurrentUser() user: User,
+    @Query(new QueryValidationPipe()) query: WalletSummaryQueryDto,
+  ): Promise<
+    ApiResponse<{
+      summary: {
+        totalTransactions: number;
+        incomingTransactions: number;
+        outgoingTransactions: number;
+        totalIncomingAmount: number;
+        totalOutgoingAmount: number;
+        totalPendingAmount: number;
+        pendingCount: number;
+        approvedCount: number;
+        rejectedCount: number;
+        totalApprovedAmount: number;
+        totalRejectedAmount: number;
+      };
+    }>
+  > {
+    return this.transactionService.getWalletSummary(user, query);
   }
 
   /**

@@ -10,6 +10,8 @@ import {
   TransactionResponseDto,
   WithdrawCompanyTransactionDto,
   WithdrawPersonalTransactionDto,
+  WalletSummaryQueryDto,
+  WalletSummaryQueryHelper,
 } from './dto';
 import { TransactionStatus, TransactionType } from './enums/transaction.enum';
 import { User } from '../user/entities';
@@ -536,5 +538,124 @@ export class TransactionService {
 
     wallet.balance = direction === 'credit' ? wallet.balance + amount : wallet.balance - amount;
     await this.walletService.saveWallet(wallet);
+  }
+
+  /**
+   * Gets wallet summary statistics for the current user.
+   * All calculations are done in a single database query using aggregations.
+   * @param user - The current authenticated user
+   * @param query - Query parameters for filtering
+   * @returns ApiResponse containing wallet summary statistics
+   */
+  async getWalletSummary(
+    user: User,
+    query: WalletSummaryQueryDto,
+  ): Promise<
+    ApiResponse<{
+      summary: {
+        totalTransactions: number;
+        incomingTransactions: number;
+        outgoingTransactions: number;
+        totalIncomingAmount: number;
+        totalOutgoingAmount: number;
+        totalPendingAmount: number;
+        pendingCount: number;
+        approvedCount: number;
+        rejectedCount: number;
+        totalApprovedAmount: number;
+        totalRejectedAmount: number;
+      };
+    }>
+  > {
+    const parsed = WalletSummaryQueryHelper.parse(query);
+    const userWallet = await this.walletService.getUserWalletEntity(user.id);
+    const walletId = userWallet.id;
+
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('transaction')
+      .where('(transaction.fromWalletId = :walletId OR transaction.toWalletId = :walletId)', { walletId });
+
+    // Apply filters
+    const { filters } = parsed;
+
+    if (filters.status) {
+      queryBuilder.andWhere('transaction.status = :status', { status: filters.status });
+    }
+
+    if (filters.type) {
+      queryBuilder.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    if (filters.direction) {
+      const direction = String(filters.direction).toLowerCase();
+      if (direction === 'incoming') {
+        queryBuilder.andWhere('transaction.toWalletId = :walletId', { walletId });
+      } else if (direction === 'outgoing') {
+        queryBuilder.andWhere('transaction.fromWalletId = :walletId', { walletId });
+      }
+    }
+
+    if (filters.startDate) {
+      const startDate = new Date(filters.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('transaction.createdAt <= :endDate', { endDate });
+    }
+
+    // Single query with conditional aggregations
+    // Using raw SQL expressions with database column names
+    const result = await queryBuilder
+      .select('COUNT(*)', 'totalTransactions')
+      .addSelect('COUNT(CASE WHEN transaction.to_wallet_id = :walletId THEN 1 END)', 'incomingTransactions')
+      .addSelect('COUNT(CASE WHEN transaction.from_wallet_id = :walletId THEN 1 END)', 'outgoingTransactions')
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN transaction.to_wallet_id = :walletId THEN transaction.amount ELSE 0 END), 0)',
+        'totalIncomingAmount',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN transaction.from_wallet_id = :walletId THEN transaction.amount ELSE 0 END), 0)',
+        'totalOutgoingAmount',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN transaction.status = :pendingStatus THEN transaction.amount ELSE 0 END), 0)',
+        'totalPendingAmount',
+      )
+      .addSelect('COUNT(CASE WHEN transaction.status = :pendingStatus THEN 1 END)', 'pendingCount')
+      .addSelect('COUNT(CASE WHEN transaction.status = :approvedStatus THEN 1 END)', 'approvedCount')
+      .addSelect('COUNT(CASE WHEN transaction.status = :rejectedStatus THEN 1 END)', 'rejectedCount')
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN transaction.status = :approvedStatus THEN transaction.amount ELSE 0 END), 0)',
+        'totalApprovedAmount',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN transaction.status = :rejectedStatus THEN transaction.amount ELSE 0 END), 0)',
+        'totalRejectedAmount',
+      )
+      .setParameter('walletId', walletId)
+      .setParameter('pendingStatus', TransactionStatus.PENDING)
+      .setParameter('approvedStatus', TransactionStatus.APPROVED)
+      .setParameter('rejectedStatus', TransactionStatus.REJECTED)
+      .getRawOne();
+
+    const summary = {
+      totalTransactions: Number(result?.totalTransactions || 0),
+      incomingTransactions: Number(result?.incomingTransactions || 0),
+      outgoingTransactions: Number(result?.outgoingTransactions || 0),
+      totalIncomingAmount: Number(result?.totalIncomingAmount || 0),
+      totalOutgoingAmount: Number(result?.totalOutgoingAmount || 0),
+      totalPendingAmount: Number(result?.totalPendingAmount || 0),
+      pendingCount: Number(result?.pendingCount || 0),
+      approvedCount: Number(result?.approvedCount || 0),
+      rejectedCount: Number(result?.rejectedCount || 0),
+      totalApprovedAmount: Number(result?.totalApprovedAmount || 0),
+      totalRejectedAmount: Number(result?.totalRejectedAmount || 0),
+    };
+
+    return ApiResponse.success('Wallet summary retrieved successfully', { summary });
   }
 }
