@@ -25,14 +25,14 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 200 })
+  @Column({ type: 'varchar', length: 200, name: 'full_name' })
   fullName: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true, name: 'email' })
   @Index()
   email: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'mobile_number' })
   @Check(`"mobileNumber" IS NULL OR "mobileNumber" ~ '^[0-9+]{7,20}$'`)
   mobileNumber: string | null;
 

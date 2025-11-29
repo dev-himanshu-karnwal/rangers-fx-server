@@ -11,8 +11,11 @@ import {
   UserVerificationService,
   UserResetTokenService,
   UserUpdateService,
+  UserAdminService,
 } from './services';
 import { User } from './entities/user.entity';
+import { Wallet } from '../wallets/entities/wallet.entity';
+import { UserLevel } from '../levels/entities/user-level.entity';
 import { ClosureModule } from './closure/closure.module';
 import { WalletModule } from '../wallets/wallet.module';
 import { OtpModule } from '../otp/otp.module';
@@ -26,7 +29,7 @@ import { LevelsModule } from '../levels/levels.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Wallet, UserLevel]),
     ClosureModule, // Import ClosureModule to access UserClosureService
     forwardRef(() => WalletModule), // Import WalletModule to access WalletService
     OtpModule,
@@ -45,6 +48,7 @@ import { LevelsModule } from '../levels/levels.module';
     UserVerificationService,
     UserResetTokenService,
     UserUpdateService,
+    UserAdminService,
   ],
   exports: [UserService, UserReferralService],
 })

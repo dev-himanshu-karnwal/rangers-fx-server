@@ -30,8 +30,21 @@ export class QueryParamsDto {
   pageSize?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  level?: number;
+
+  @IsOptional()
   @IsString()
   sort?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  workRole?: string;
 
   @IsOptional()
   @IsString()

@@ -13,6 +13,7 @@ import {
   UserVerificationService,
   UserResetTokenService,
   UserUpdateService,
+  UserAdminService,
 } from './services';
 
 /**
@@ -30,6 +31,7 @@ export class UserService {
     private readonly userVerificationService: UserVerificationService,
     private readonly userResetTokenService: UserResetTokenService,
     private readonly userUpdateService: UserUpdateService,
+    private readonly userAdminService: UserAdminService,
   ) {}
 
   // ==================== Query Operations ====================

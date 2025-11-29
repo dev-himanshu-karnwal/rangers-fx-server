@@ -6,3 +6,4 @@ export * from './user-signup.service';
 export * from './user-verification.service';
 export * from './user-reset-token.service';
 export * from './user-update.service';
+export * from './user-admin.service';

@@ -11,7 +11,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ChangeMailDto, EmailVerifyDTO, ChangePasswordDto, UpdateUserDto, UserResponseDto } from './dto';
+import {
+  ChangeMailDto,
+  EmailVerifyDTO,
+  ChangePasswordDto,
+  UpdateUserDto,
+  UserResponseDto,
+  AdminUserListDto,
+} from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { User } from './entities';
 import { ApiResponse } from '../../common/response/api.response';
@@ -19,6 +26,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { QueryParamsDto } from '../../common/query';
 import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
+import { UserAdminService } from './services/user-admin.service';
 
 /**
  * User controller handling HTTP requests for user operations
@@ -26,7 +34,10 @@ import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
  */
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly userAdminService: UserAdminService,
+  ) {}
 
   /**
    * Get user by Email
@@ -50,6 +61,28 @@ export class UserController {
     @Param('walletId', ParseIntPipe) walletId: number,
   ): Promise<ApiResponse<{ user: UserResponseDto }>> {
     return this.userService.getUserByWalletId(walletId);
+  }
+
+  /**
+   * Get all users with pagination, filtering, and sorting
+   * Supports filtering by status and search (name, id, email)
+   * Supports sorting on all fields including wallet balance and level hierarchy
+   * @param query - Query parameters (pagination, sorting, filters)
+   * @returns Paginated list of users with wallet and active level
+   */
+  @Get('admin')
+  @HttpCode(HttpStatus.OK)
+  async getAllUsers(@Query(new QueryValidationPipe()) query: QueryParamsDto): Promise<
+    ApiResponse<{
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+      };
+      users: AdminUserListDto[];
+    }>
+  > {
+    return this.userAdminService.getAllUsers(query);
   }
 
   /**

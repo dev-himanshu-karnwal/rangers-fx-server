@@ -3,3 +3,4 @@ export * from './user-response.dto';
 export * from './change-password.dto';
 export * from './change-mail.dto';
 export * from './email-verify.dto';
+export * from './admin-user-list.dto';
