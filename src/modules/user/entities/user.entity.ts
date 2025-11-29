@@ -11,6 +11,7 @@ import {
   Check,
 } from 'typeorm';
 import { UserStatus, UserRole, WorkRole } from '../enums/user.enum';
+import { decimalTransformer } from '../../../common/transformers/decimal.transformer';
 
 /**
  * User entity representing a user in the system.
@@ -87,7 +88,14 @@ export class User {
   })
   workRole: WorkRole;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'business_done' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'business_done',
+    transformer: decimalTransformer,
+  })
   businessDone: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
