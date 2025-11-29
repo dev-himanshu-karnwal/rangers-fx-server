@@ -289,19 +289,13 @@ export class TransactionService {
     addP2PTransactionDto: AddP2PTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const userFromWalletResponse = await this.walletService.getUserWallet(user.id);
-    const userFromWallet = userFromWalletResponse.data!.wallet;
+    const userFromWallet = await this.walletService.getUserWalletEntity(user.id);
 
     if (userFromWallet.balance < addP2PTransactionDto.amount) {
       throw new BadRequestException('Insufficient balance in your wallet');
     }
 
-    const userToWalletResponse = await this.walletService.getUserWallet(addP2PTransactionDto.toUserId);
-    const userToWallet = userToWalletResponse.data!.wallet;
-
-    if (!userToWallet) {
-      throw new NotFoundException('Recipient wallet not found');
-    }
+    const userToWallet = await this.walletService.getUserWalletEntity(addP2PTransactionDto.toUserId);
 
     await this.ensureSufficientBalanceWithPendingTransactions(userFromWallet, addP2PTransactionDto.amount);
 

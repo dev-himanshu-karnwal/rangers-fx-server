@@ -14,7 +14,7 @@ import { LevelsModule } from '../levels/levels.module';
     TypeOrmModule.forFeature([BotActivation, Transaction]),
     WalletModule,
     TransactionModule,
-    UserModule,
+    forwardRef(() => UserModule),
     forwardRef(() => LevelsModule),
   ],
   controllers: [BotsController],

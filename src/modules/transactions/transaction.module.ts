@@ -4,7 +4,6 @@ import { TransactionController } from './transaction.controller';
 import { TransactionService } from './transaction.service';
 import { Transaction } from './entities/transaction.entity';
 import { WalletModule } from '../wallets/wallet.module';
-import { UserModule } from '../user/user.module';
 
 /**
  * Transaction module - handles transaction-related operations
@@ -13,7 +12,6 @@ import { UserModule } from '../user/user.module';
   imports: [
     TypeOrmModule.forFeature([Transaction]),
     WalletModule, // Import WalletModule to access WalletService
-    UserModule, // Import UserModule to access UserService
   ],
   controllers: [TransactionController],
   providers: [TransactionService],
