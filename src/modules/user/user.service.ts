@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FindOneOptions } from 'typeorm';
 import { User } from './entities/user.entity';
 import { ChangeMailDto, ChangePasswordDto, EmailVerifyDTO, UpdateUserDto, UserResponseDto } from './dto';
@@ -304,9 +304,16 @@ export class UserService {
    */
   async updateUserRoleToInvestorIfNeeded(user: User): Promise<User> {
     if (user.workRole === WorkRole.NONE) {
-      user.workRole = WorkRole.INVESTOR;
+      await this.userUpdateService.updateWorkRole(user.id, WorkRole.INVESTOR);
+      // Reload the user after the update to get the new state
+      const updatedUser = await this.findByIdEntity(user.id);
+      if (!updatedUser) {
+        throw new NotFoundException(`User with ID ${user.id} not found`);
+      }
+      return updatedUser;
     }
-    return this.saveUser(user);
+
+    return user;
   }
 
   /**

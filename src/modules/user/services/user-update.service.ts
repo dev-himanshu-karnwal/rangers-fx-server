@@ -76,8 +76,16 @@ export class UserUpdateService {
    * @returns Updated user entity
    */
   async inactivateUser(user: User): Promise<User> {
-    user.status = UserStatus.INACTIVE;
-    return await this.saveUser(user);
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ status: UserStatus.INACTIVE })
+      .where('id = :userId', { userId: user.id })
+      .execute();
+
+    // Retrieve and return the updated user entity
+    const updatedUser = await this.userRepository.findOne({ where: { id: user.id } });
+    return updatedUser!;
   }
 
   /**
@@ -87,8 +95,16 @@ export class UserUpdateService {
    * @returns Updated user entity
    */
   async incrementBusinessDone(user: User, amount: number): Promise<User> {
-    user.businessDone = (user.businessDone ?? 0) + amount;
-    return await this.saveUser(user);
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ businessDone: () => `"business_done" + ${amount}` })
+      .where('id = :userId', { userId: user.id })
+      .execute();
+
+    // Retrieve the updated user to return updated entity
+    const updatedUser = await this.userRepository.findOne({ where: { id: user.id } });
+    return updatedUser!;
   }
 
   /**
