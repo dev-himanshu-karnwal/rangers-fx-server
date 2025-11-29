@@ -318,7 +318,7 @@ export class TransactionService {
     const newTransaction = await this.createTransaction({
       amount: addP2PTransactionDto.amount,
       description:
-        addP2PTransactionDto.description ??
+        addP2PTransactionDto.description ||
         `Add ${addP2PTransactionDto.amount} to ${addP2PTransactionDto.toUserId}'s personal wallet`,
       type: TransactionType.P2P,
       toWallet: userToWallet,
