@@ -6,6 +6,7 @@ import {
   AddCompanyTransactionDto,
   AddP2PTransactionDto,
   AddPersonalTransactionDto,
+  AdminTransferToPersonalDto,
   TransactionResponseDto,
   WithdrawCompanyTransactionDto,
   WithdrawPersonalTransactionDto,
@@ -148,6 +149,7 @@ export class TransactionService {
 
   /**
    * Creates and adds a company transaction to the company investment wallet.
+   * Immediately approves the transaction and applies wallet transfers.
    * @param addCompanyTransactionDto - Payload for the new company transaction
    * @param user - Authenticated user initiating the transaction
    * @returns Success ApiResponse containing the created transaction
@@ -156,10 +158,9 @@ export class TransactionService {
     addCompanyTransactionDto: AddCompanyTransactionDto,
     user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
-    const companyWalletResponse = await this.walletService.getCompanyInvestmentWallet();
-    const companyWallet = companyWalletResponse.data!.wallet;
+    const companyWallet = await this.walletService.getCompanyInvestmentWalletEntity();
 
-    const newTransaction = await this.createTransaction({
+    const transactionData: DeepPartial<Transaction> = {
       amount: addCompanyTransactionDto.amount,
       description:
         addCompanyTransactionDto.description ?? `Add ${addCompanyTransactionDto.amount} to company investment wallet`,
@@ -167,8 +168,16 @@ export class TransactionService {
       toWallet: companyWallet,
       initiator: user,
       entityId: companyWallet.id,
-    });
+      status: TransactionStatus.APPROVED,
+      statusUpdatedAt: new Date(),
+      statusUpdatedBy: user.id,
+      statusUpdater: user,
+    };
 
+    // Update wallet balance (same logic as approveTransaction for ADD_COMPANY)
+    await this.walletService.increaseCompanyInvestmentWalletBalance(addCompanyTransactionDto.amount);
+
+    const newTransaction = await this.createTransaction(transactionData);
     const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('Company transaction added successfully', {
@@ -275,9 +284,12 @@ export class TransactionService {
 
     const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
-    return ApiResponse.success<{ transaction: TransactionResponseDto }>('Personal transaction added successfully', {
-      transaction: TransactionResponseDto.fromEntity(reloaded),
-    });
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>(
+      'Your request for adding funds to your wallet has been received and is being processed by our team.',
+      {
+        transaction: TransactionResponseDto.fromEntity(reloaded),
+      },
+    );
   }
 
   /**
@@ -325,6 +337,53 @@ export class TransactionService {
     const reloaded = await this.reloadTransactionWithRelations(newTransaction);
 
     return ApiResponse.success<{ transaction: TransactionResponseDto }>('P2P transaction added successfully', {
+      transaction: TransactionResponseDto.fromEntity(reloaded),
+    });
+  }
+
+  /**
+   * Creates a transfer transaction from company investment wallet to a user's personal wallet.
+   * Admin-only operation that can directly approve the payment.
+   * @param adminTransferToPersonalDto - Payload containing userId, amount, description, and direct approval flag
+   * @param user - Authenticated admin user initiating the transaction
+   * @returns Success ApiResponse containing the created transaction
+   */
+  async adminTransferToPersonal(
+    adminTransferToPersonalDto: AdminTransferToPersonalDto,
+    user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    const companyInvestmentWallet = await this.walletService.getCompanyInvestmentWalletEntity();
+
+    if (companyInvestmentWallet.balance < adminTransferToPersonalDto.amount) {
+      throw new BadRequestException('Insufficient balance in company investment wallet');
+    }
+
+    const userWallet = await this.walletService.getUserWalletEntity(adminTransferToPersonalDto.userId);
+
+    const transactionData: DeepPartial<Transaction> = {
+      amount: adminTransferToPersonalDto.amount,
+      description:
+        adminTransferToPersonalDto.description ??
+        `Admin transfer of ${adminTransferToPersonalDto.amount} to user ${adminTransferToPersonalDto.userId}'s personal wallet`,
+      type: TransactionType.ADD_PERSONAL,
+      toWallet: userWallet,
+      fromWallet: companyInvestmentWallet,
+      initiator: user,
+      entityId: userWallet.id,
+      status: TransactionStatus.APPROVED,
+      statusUpdatedAt: new Date(),
+      statusUpdatedBy: user.id,
+      statusUpdater: user,
+    };
+
+    // Update wallet balances
+    await this.walletService.decreaseCompanyInvestmentWalletBalance(adminTransferToPersonalDto.amount);
+    await this.applyWalletBalanceChange(userWallet, adminTransferToPersonalDto.amount, 'credit');
+
+    const newTransaction = await this.createTransaction(transactionData);
+    const reloaded = await this.reloadTransactionWithRelations(newTransaction);
+
+    return ApiResponse.success<{ transaction: TransactionResponseDto }>('Transfer completed successfully', {
       transaction: TransactionResponseDto.fromEntity(reloaded),
     });
   }

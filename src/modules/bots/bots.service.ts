@@ -13,9 +13,9 @@ import { TransactionStatus, TransactionType } from '../transactions/enums/transa
 import { TransactionResponseDto } from '../transactions/dto';
 import { TransactionService } from '../transactions/transaction.service';
 import { UserService } from '../user/user.service';
-import { WalletResponseDto } from '../wallets/dto';
 import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 import { LevelConditionEvaluatorService } from '../levels/services/level-condition-evaluator.service';
+import { Wallet } from '../wallets/entities';
 
 @Injectable()
 export class BotsService {
@@ -320,15 +320,8 @@ export class BotsService {
   /**
    * Fetches a user's wallet or throws when it is missing.
    */
-  private async getUserWalletOrThrow(userId: number) {
-    const userWalletResponse = await this.walletService.getUserWallet(userId);
-    const userWallet = userWalletResponse.data?.wallet;
-
-    if (!userWallet) {
-      throw new NotFoundException('User wallet not found');
-    }
-
-    return userWallet;
+  private async getUserWalletOrThrow(userId: number): Promise<Wallet> {
+    return await this.walletService.getUserWalletEntity(userId);
   }
 
   /**
@@ -345,28 +338,15 @@ export class BotsService {
       throw new NotFoundException('Referrer user not found');
     }
 
-    const referrerWalletResponse = await this.walletService.getUserWallet(referrer.id);
-    const referrerWallet = referrerWalletResponse.data?.wallet;
-
-    if (!referrerWallet) {
-      throw new NotFoundException('Referrer wallet not found');
-    }
-
+    const referrerWallet = await this.walletService.getUserWalletEntity(referrer.id);
     return { referrer, referrerWallet };
   }
 
   /**
    * Fetches the company income wallet or throws when missing.
    */
-  private async getCompanyIncomeWallet() {
-    const companyIncomeWalletResponse = await this.walletService.getCompanyIncomeWallet();
-    const companyIncomeWallet = companyIncomeWalletResponse.data?.wallet;
-
-    if (!companyIncomeWallet) {
-      throw new NotFoundException('Company income wallet not found');
-    }
-
-    return companyIncomeWallet;
+  private async getCompanyIncomeWallet(): Promise<Wallet> {
+    return await this.walletService.getCompanyIncomeWalletEntity();
   }
 
   /**
@@ -389,9 +369,9 @@ export class BotsService {
     companyAllocationAmount,
     referralAllocationAmount,
   }: {
-    userWallet: WalletResponseDto;
-    companyIncomeWallet: WalletResponseDto;
-    referrerWallet: WalletResponseDto;
+    userWallet: Wallet;
+    companyIncomeWallet: Wallet;
+    referrerWallet: Wallet;
     companyAllocationAmount: number;
     referralAllocationAmount: number;
   }) {
@@ -414,7 +394,7 @@ export class BotsService {
    */
   private async createBotActivationRecord(
     user: User,
-    userWallet: WalletResponseDto,
+    userWallet: Wallet,
     activateBotDto: ActivateBotDto,
   ): Promise<BotActivation> {
     const botActivation = this.botActivationRepository.create({
@@ -449,9 +429,9 @@ export class BotsService {
     referralAllocationAmount,
   }: {
     user: User;
-    userWallet: WalletResponseDto;
-    companyIncomeWallet: WalletResponseDto;
-    referrerWallet: WalletResponseDto | null;
+    userWallet: Wallet;
+    companyIncomeWallet: Wallet;
+    referrerWallet: Wallet | null;
     botActivationId: number;
     companyAllocationAmount: number;
     referralAllocationAmount: number;
@@ -484,9 +464,9 @@ export class BotsService {
     referralAllocationAmount,
   }: {
     user: User;
-    userWallet: WalletResponseDto;
-    companyIncomeWallet: WalletResponseDto;
-    referrerWallet: WalletResponseDto | null;
+    userWallet: Wallet;
+    companyIncomeWallet: Wallet;
+    referrerWallet: Wallet | null;
     botActivationId: number;
     companyAllocationAmount: number;
     referralAllocationAmount: number;

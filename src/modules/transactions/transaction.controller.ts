@@ -15,6 +15,7 @@ import { TransactionService } from './transaction.service';
 import {
   AddCompanyTransactionDto,
   AddPersonalTransactionDto,
+  AdminTransferToPersonalDto,
   TransactionResponseDto,
   AddP2PTransactionDto,
   WithdrawCompanyTransactionDto,
@@ -124,6 +125,23 @@ export class TransactionController {
     @CurrentUser() user: User,
   ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
     return this.transactionService.addP2PTransaction(addP2PTransactionDto, user);
+  }
+
+  /**
+   * Transfers amount from company investment wallet to a user's personal wallet.
+   * Admin-only operation that can directly approve the payment.
+   * @param adminTransferToPersonalDto - Data for the admin transfer
+   * @param user - The current authenticated admin user
+   * @returns ApiResponse containing the newly created transaction
+   */
+  @UseGuards(AdminGuard)
+  @Admin()
+  @Post('c2p')
+  async adminTransferToPersonal(
+    @Body() adminTransferToPersonalDto: AdminTransferToPersonalDto,
+    @CurrentUser() user: User,
+  ): Promise<ApiResponse<{ transaction: TransactionResponseDto }>> {
+    return this.transactionService.adminTransferToPersonal(adminTransferToPersonalDto, user);
   }
 
   /**

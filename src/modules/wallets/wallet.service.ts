@@ -69,6 +69,27 @@ export class WalletService {
     return wallet;
   }
 
+  /**
+   * Gets company investment wallet entity (for internal operations)
+   * @returns Wallet entity
+   * @throws NotFoundException if wallet not found
+   */
+  async getCompanyInvestmentWalletEntity(): Promise<Wallet> {
+    const wallet = await this.walletRepository.findOne({
+      where: { walletType: WalletType.COMPANY_INVESTMENT },
+    });
+    if (!wallet) {
+      throw new NotFoundException('Company investment wallet not found.');
+    }
+    return wallet;
+  }
+
+  /**
+   * Gets company wallet by type (for internal operations)
+   * @param walletType - Wallet type
+   * @returns Wallet entity
+   * @throws NotFoundException if wallet not found
+   */
   private async getCompanyWallet(
     walletType: 'income' | 'investment',
   ): Promise<ApiResponse<{ wallet: WalletResponseDto }>> {
