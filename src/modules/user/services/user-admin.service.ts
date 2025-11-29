@@ -60,9 +60,13 @@ export class UserAdminService {
     // Search filter (searches in fullName, email, and id)
     if (filters.search) {
       const searchTerm = String(filters.search).trim();
+      const idColumn = metadata.findColumnWithPropertyName('id');
+      const fullNameColumn = metadata.findColumnWithPropertyName('fullName');
+      const emailColumn = metadata.findColumnWithPropertyName('email');
 
+      // Use CAST function instead of :: syntax for better TypeORM compatibility
       queryBuilder.andWhere(
-        `(user.id::text ILIKE :search OR user.full_name ILIKE :search OR user.email ILIKE :search)`,
+        `(CAST(user.${idColumn?.databaseName || 'id'} AS TEXT) ILIKE :search OR user.${fullNameColumn?.databaseName || 'full_name'} ILIKE :search OR user.${emailColumn?.databaseName || 'email'} ILIKE :search)`,
         { search: `%${searchTerm}%` },
       );
     }
