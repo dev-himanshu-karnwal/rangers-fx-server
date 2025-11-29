@@ -138,6 +138,15 @@ export class UserService {
     return this.userQueryService.findDirectChildrenOfUserById(id, query);
   }
 
+  /**
+   * Get current user profile
+   * @param user - User entity
+   * @returns User profile response
+   */
+  async getMe(user: User): Promise<ApiResponse<{ user: UserResponseDto }>> {
+    return this.userQueryService.getMe(user);
+  }
+
   // ==================== Password Operations ====================
 
   /**
