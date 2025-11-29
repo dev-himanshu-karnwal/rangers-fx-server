@@ -69,8 +69,8 @@ export class User {
   })
   status: UserStatus;
 
-  @Column({ type: 'boolean', default: false, name: 'has_children' })
-  hasChildren: boolean;
+  @Column({ type: 'int', default: 0, name: 'direct_children_count' })
+  directChildrenCount: number;
 
   @Column({
     type: 'enum',

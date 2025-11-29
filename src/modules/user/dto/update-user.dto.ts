@@ -1,14 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  IsEmail,
-  IsEnum,
-  MinLength,
-  IsBoolean,
-  IsNumberString,
-  MaxLength,
-  Matches,
-} from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsEnum, MinLength, MaxLength, Matches, IsInt, Min } from 'class-validator';
 import { UserRole, WorkRole, UserStatus } from '../enums/user.enum';
 
 /**
@@ -36,20 +26,4 @@ export class UpdateUserDto {
     message: 'mobileNumber must contain only digits or + and be 7–20 characters long',
   })
   mobileNumber?: string | null;
-
-  @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
-
-  @IsOptional()
-  @IsEnum(WorkRole)
-  workRole?: WorkRole;
-
-  @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus;
-
-  @IsOptional()
-  @IsBoolean()
-  hasChildren?: boolean | null;
 }

@@ -7,7 +7,7 @@ export type UserSeedData = {
   password: string; // Will be hashed
   status: UserStatus;
   role: UserRole;
-  hasChildren: boolean;
+  directChildrenCount: number;
   referralCode: string;
   workRole: WorkRole;
   businessDone: number;
