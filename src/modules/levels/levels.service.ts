@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { Level, UserLevel } from './entities';
 import { ApiResponse } from '../../common/response/api.response';
-import { LevelResponseDto } from './dto';
+import { LevelResponseDto, UserLevelResponseDto } from './dto';
 import { User } from '../user/entities/user.entity';
 import { QueryParamsDto, QueryParamsHelper } from '../../common/query';
 
@@ -234,6 +234,27 @@ export class LevelsService {
     return this.userLevelRepository.find({
       where: { userId: In(userIds), endDate: IsNull() },
       relations: ['level'],
+    });
+  }
+
+  /**
+   * Retrieves all levels (active and inactive) for a specific user.
+   * @param userId - The user ID to get levels for
+   * @returns ApiResponse containing all user levels
+   */
+  async getAllUserLevels(userId: number): Promise<
+    ApiResponse<{
+      userLevels: UserLevelResponseDto[];
+    }>
+  > {
+    const userLevels = await this.userLevelRepository.find({
+      where: { userId },
+      relations: ['level'],
+      order: { startDate: 'ASC' },
+    });
+
+    return ApiResponse.success('User levels retrieved successfully', {
+      userLevels: userLevels.map((userLevel) => UserLevelResponseDto.fromEntity(userLevel)),
     });
   }
 }

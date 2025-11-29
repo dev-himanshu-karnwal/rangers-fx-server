@@ -1,9 +1,11 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { LevelsService } from './levels.service';
 import { ApiResponse } from '../../common/response/api.response';
-import { LevelResponseDto } from './dto';
+import { LevelResponseDto, UserLevelResponseDto } from './dto';
 import { QueryParamsDto } from '../../common/query';
 import { QueryValidationPipe } from '../../common/pipes/query-validation.pipe';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../user/entities';
 
 @Controller('levels')
 export class LevelsController {
@@ -21,6 +23,15 @@ export class LevelsController {
     }>
   > {
     return this.levelsService.getAll(query);
+  }
+
+  @Get('mine')
+  async getMyLevels(@CurrentUser() user: User): Promise<
+    ApiResponse<{
+      userLevels: UserLevelResponseDto[];
+    }>
+  > {
+    return this.levelsService.getAllUserLevels(user.id);
   }
 
   @Get(':id')

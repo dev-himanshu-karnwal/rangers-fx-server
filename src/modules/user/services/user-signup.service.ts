@@ -60,6 +60,7 @@ export class UserSignupService {
       fullName,
       email,
       referredByUserId,
+      status: UserStatus.UNVERIFIED,
     });
 
     return this.userRepository.save(user);
