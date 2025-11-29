@@ -90,15 +90,39 @@ export class UserAdminService {
     // Apply sorting - handle special cases for wallet balance and level hierarchy
     const orderEntries = Object.entries(parsed.order);
 
+    // Check if we need to sort by wallet or level, and add selects for those
+    const needsWalletSort = orderEntries.some(
+      ([field]) => field === 'wallet' || field === 'wallet.balance' || field === 'balance',
+    );
+    const needsLevelSort = orderEntries.some(
+      ([field]) => field === 'level' || field === 'level.hierarchy' || field === 'hierarchy',
+    );
+
+    // Add selects for sorting fields before applying orderBy
+    if (needsWalletSort) {
+      queryBuilder.addSelect('COALESCE(wallet.balance, 0)', 'wallet_balance_sort');
+    }
+    if (needsLevelSort) {
+      queryBuilder.addSelect('COALESCE(level.hierarchy, 0)', 'level_hierarchy_sort');
+    }
+
     if (orderEntries.length > 0) {
       for (let i = 0; i < orderEntries.length; i++) {
         const [field, direction] = orderEntries[i];
 
-        // Handle special sorting fields
+        // Handle special sorting fields - use the aliases we created
         if (field === 'wallet' || field === 'wallet.balance' || field === 'balance') {
-          queryBuilder.addOrderBy('wallet.balance', direction);
+          if (i === 0) {
+            queryBuilder.orderBy('wallet_balance_sort', direction);
+          } else {
+            queryBuilder.addOrderBy('wallet_balance_sort', direction);
+          }
         } else if (field === 'level' || field === 'level.hierarchy' || field === 'hierarchy') {
-          queryBuilder.addOrderBy('level.hierarchy', direction);
+          if (i === 0) {
+            queryBuilder.orderBy('level_hierarchy_sort', direction);
+          } else {
+            queryBuilder.addOrderBy('level_hierarchy_sort', direction);
+          }
         } else {
           // Regular user field sorting
           const column = metadata.findColumnWithPropertyName(field);
@@ -168,12 +192,7 @@ export class UserAdminService {
       });
     });
 
-    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(
-      mappedUsers,
-      total,
-      { page: 1, pageSize: 10, sort: 'createdAt:desc', filters: {}, order: { createdAt: 'DESC' }, skip: 0, take: 10 },
-      'users',
-    );
+    const result = QueryParamsHelper.toPaginatedResultWithEntityKey(mappedUsers, total, parsed, 'users');
 
     return ApiResponse.success('Users fetched successfully', result);
   }
