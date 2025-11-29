@@ -12,13 +12,13 @@ export function getUsersData(): UserSeedData[] {
   // Add development users
   users.push({
     fullName: 'Himanshu Karnwal',
-    email: 'himanshukar1810@example.com',
+    email: 'himanshukar1810@gmail.com',
     mobileNumber: '+1234567890',
     password: 'Admin@123',
     status: UserStatus.INACTIVE,
     role: UserRole.ADMIN,
-    hasChildren: false,
-    referralCode: 'ABC123',
+    directChildrenCount: 0,
+    referralCode: 'ABCD1234',
     workRole: WorkRole.NONE,
     businessDone: 0,
   });

@@ -22,9 +22,12 @@ export async function createDataSource(): Promise<DataSource> {
     entities: [User, Wallet, Package, Level],
     synchronize: false,
     logging: false,
-    ssl: {
-      ca: fs.readFileSync(path.join(process.cwd(), 'certs/cert.crt'), 'utf-8').toString(),
-    },
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? {
+            ca: fs.readFileSync(path.join(process.cwd(), 'certs/cert.crt'), 'utf-8').toString(),
+          }
+        : false,
   });
 
   await dataSource.initialize();

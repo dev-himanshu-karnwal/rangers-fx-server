@@ -114,15 +114,12 @@ export class AuthSignupService {
     const userResponse = await this.userService.findOne(updatedUser.id);
     await this.emailService.sendWelcomeEmail(updatedUser.email, updatedUser.fullName, updatedUser.referralCode!);
 
-    // Updating parent
+    // Updating parent - increment children count when a user joins via referral
     if (userResponse.referredByUserId) {
       const existingParent = await this.userService.findUserByReferredByUserId(userResponse.referredByUserId);
       if (existingParent) {
-        const updateUserDto = new UserResponseDto({
-          ...existingParent,
-          hasChildren: true,
-        });
-        await this.userService.update(existingParent.id, updateUserDto);
+        existingParent.directChildrenCount = (existingParent.directChildrenCount ?? 0) + 1;
+        await this.userService.saveUser(existingParent);
       }
     }
 

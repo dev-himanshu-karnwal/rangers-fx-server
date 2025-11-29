@@ -31,7 +31,7 @@ export class UserResponseDto {
   status: UserStatus;
 
   @Expose()
-  hasChildren: boolean | null;
+  directChildrenCount: number;
 
   @Expose()
   role: UserRole;
